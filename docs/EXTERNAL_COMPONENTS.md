@@ -2,8 +2,8 @@
 
 Regulamin §4.1: wymieniamy wszystkie komponenty firm trzecich. Wszystkie są open source na licencjach
 permisywnych. **Rozwiązanie nie używa żadnego komponentu na licencji AGPL ani GPL** (świadomie odrzucone:
-PyMuPDF i Ghostscript na AGPL, modele spaCy `pl_core_news_*` na GPL). Nie używa też modeli językowych ani usług
-w chmurze. Wszystko działa lokalnie na CPU.
+PyMuPDF i Ghostscript na AGPL, modele spaCy `pl_core_news_*` na GPL). Domyślnie nie używa modeli językowych ani usług
+w chmurze; opcjonalny profil `llm` dokłada lokalny model (poniżej). Wszystko działa lokalnie na CPU.
 
 Wersje: minimalne z `requirements.txt` / wersje przetestowane (venv Python 3.13.2, 2026-11-21).
 Źródło weryfikacji licencji: raport `licences.md` zespołu (strony projektów) oraz metadane pakietów;
@@ -26,6 +26,13 @@ pozycje oznaczone „(metadane)” nie były osobno sprawdzane na stronie projek
 | Uvicorn | ≥0.30 (0.54.0) | BSD-3-Clause (metadane) | serwer HTTP | https://github.com/encode/uvicorn |
 | python-multipart | ≥0.0.9 (0.0.34) | Apache-2.0 (metadane) | wgrywanie plików | https://github.com/Kludex/python-multipart |
 | HTTPX | ≥0.27 (0.28.1) | BSD-3-Clause (metadane) | klient testowy API | https://github.com/encode/httpx |
+| psutil | ≥5.9 | BSD-3-Clause | pomiar pamięci i czasu w `eval/bench.py` (narzędzie pomiarowe, nie ścieżka ekstrakcji) | https://github.com/giampaolo/psutil |
+
+## Opcjonalny profil `llm` (`requirements-llm.txt`, [LLM.md](LLM.md))
+| Komponent | Licencja | Do czego | Link |
+|---|---|---|---|
+| llama-cpp-python (>=0.3.16; wiąże llama.cpp, MIT) | MIT | uruchomienie modelu GGUF na CPU; opcjonalny, bez niego profil `llm` działa jak `ocr` | https://github.com/abetlen/llama-cpp-python |
+| Qwen3-1.7B, wagi GGUF Q8_0 (`Qwen/Qwen3-1.7B-GGUF`) | Apache-2.0 | lokalny czytnik pól, których reguły nie odczytały; wagi pobierane przy pierwszym użyciu profilu `llm` z kontrolą sha256 (`python -m odw2json.llm.fetch`), nie ma ich w repozytorium | https://huggingface.co/Qwen/Qwen3-1.7B-GGUF |
 
 ## Zależności pośrednie (najważniejsze)
 | Komponent | Licencja | Ściągany przez |

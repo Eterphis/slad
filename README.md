@@ -76,7 +76,7 @@ Zbiory z danych UZP:
 
 | Zbiór | Do czego | F1 (profil `ocr`) | odwołanie | pełnomocnictwo | przelew |
 |---|---|---|---|---|---|
-| `dane/skany` (30 skanów) | główna miara, najbliżej prawdziwego testu | **0,979** | 0,994 | 0,968 | 0,944 |
+| `dane/skany` (30 skanów) | główna miara, najbliżej prawdziwego testu | **0,985** | 0,994 | 0,968 | 0,982 |
 | przykłady 41–60 | odłożone | 1,000 | 1,000 | 1,000* | 1,000 |
 | przykłady 01–40 | strojenie reguł | 1,000 | 1,000 | 1,000 | 1,000 |
 | `dane/negatywne` (12) | odrzucanie | 12/12 dokumentów dostaje `{}` | | | |
@@ -85,8 +85,10 @@ Zbiory z danych UZP:
 Skany nie są już w pełni niezależne: ogólne reguły (PESEL pełnomocnika, koniec sekcji Odwołującego, scalanie
 duplikatów osób, druga próba OCR na zaszumionych liniach) powstały z analizy pomyłek na tych 30 dokumentach, a słownik
 polskich znaków zawiera też słowa ze skanów. Prawdziwy test UZP ma zmieniony układ, więc spodziewamy się wyniku niższego.
-Znane pomyłki na skanach: przedsiębiorca jednoosobowy jako mocodawca, zniekształcony przez OCR tytuł przelewu, prefiks
-`PL` w numerze rachunku (wzorce są tu niespójne). Profil `llm` daje dziś ten sam wynik co `ocr` (reguły czytają już
+Znane pomyłki na skanach: przedsiębiorca jednoosobowy jako mocodawca, zniekształcony przez OCR tytuł przelewu. Prefiks
+`PL` w numerze rachunku zapisujemy tak jak wzorce UZP: na skanach, jeśli jest wydrukowany; w dokumentach z warstwą
+tekstową same cyfry. Prawdziwe odwołania często mają dwukolumnowy nagłówek stron (etykieta obok zawiniętej nazwy):
+porządkujemy go na poziomie układu strony, sprawdzone na zanonimizowanym odwołaniu z szablonu UZP. Profil `llm` daje dziś ten sam wynik co `ocr` (reguły czytają już
 pola, w których pomagał), a kosztuje 1-3 minuty na wywołanie modelu na CPU, dlatego jest
 opcjonalny. Czas i pamięć: [docs/PROFILES.md](docs/PROFILES.md) (OCR na zimno ok. 6 s mediany na dokument).
 

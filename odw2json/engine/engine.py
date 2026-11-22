@@ -12,7 +12,7 @@ from odw2json.write import fill as fill_skeleton  # same completion rule as the 
 from odw2json.write import skeleton as schema_skeleton
 
 from .dedupe import dedupe_items, prefer, same_name
-from .normalise import NORMALISERS, VALIDATORS
+from .normalise import NORMALISERS, PAGE_AWARE, VALIDATORS
 from .recipes import Recipe, RecipeError, dictionaries_dir, load_dictionary, load_recipes, recipes_dir, signature
 from .strategies import STRATEGIES, Candidate, Context, Scope, compile_pattern
 from .text import Text, fold, squash
@@ -186,7 +186,7 @@ class RecipeEngine:
             if strat.get("all"):
                 found, seen = [], set()
                 for c in fn(ctx, strat, scope_):  # every distinct value once, in document order
-                    v = _normalise(f, c.value)
+                    v = _normalise(f, c.value, text.sources.get(c.page))
                     if v is not None and v not in seen:
                         seen.add(v)
                         found.append((v, c))
@@ -205,7 +205,7 @@ class RecipeEngine:
                     return
                 continue
             for c in fn(ctx, strat, scope_):
-                v = _normalise(f, c.value)
+                v = _normalise(f, c.value, text.sources.get(c.page))
                 if v is not None:
                     _set(item, path, v)
                     evidence.append(_evidence(prefix + path, v, c, strat, f, text))
@@ -314,13 +314,13 @@ def _sections(recipe: Recipe, text: Text) -> dict[str, Scope]:
     return out
 
 
-def _normalise(f: dict, value: Any) -> Any:
+def _normalise(f: dict, value: Any, source: str | None = None) -> Any:
     names = f.get("normalize") or []
     for name in [names] if isinstance(names, str) else names:
         if value is None:
             return None
         if isinstance(value, str) or name == "int":
-            value = NORMALISERS[name](value)
+            value = NORMALISERS[name](value, source) if name in PAGE_AWARE else NORMALISERS[name](value)
     if isinstance(value, str):
         value = value.strip() or None
     return value

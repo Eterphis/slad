@@ -12,11 +12,15 @@ from .text import fold
 
 NORMALISERS: dict[str, Callable[[str], Any]] = {}
 VALIDATORS: dict[str, Callable[[Any], bool]] = {}
+# Normalisers that also receive the source of the page the value was read from ("text" or "ocr"): f(value, source).
+PAGE_AWARE: set[str] = set()
 
 
-def register_normaliser(name: str):
+def register_normaliser(name: str, page_aware: bool = False):
     def deco(fn):
         NORMALISERS[name] = fn
+        if page_aware:
+            PAGE_AWARE.add(name)
         return fn
 
     return deco
@@ -99,6 +103,15 @@ def to_int(s: Any) -> int | None:
 def iban_pl(s: str) -> str | None:
     d = re.sub(r"[^0-9]", "", re.sub(r"(?i)^\s*PL", "", s.strip()))
     return d if len(d) == 26 else None
+
+
+@register_normaliser("iban_pl_as_printed", page_aware=True)
+def iban_pl_as_printed(s: str, source: str | None = None) -> str | None:
+    """Like `iban_pl`, but a printed `PL` prefix is kept when the value was read from an OCR-ed (scanned) page."""
+    d = iban_pl(s)
+    if d and source == "ocr" and re.match(r"(?i)\s*PL", s):
+        return "PL" + d
+    return d
 
 
 @register_normaliser("ted")

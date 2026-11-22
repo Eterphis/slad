@@ -15,7 +15,7 @@ CPU** i czyta tylko te pola, których reguły nie odczytały. Domyślny profil t
 | Runtime | llama.cpp (MIT) przez `llama-cpp-python` (MIT): gotowe koło dla Windows/Python 3.13, bez kompilatora, tylko CPU |
 | Sieć | tylko jednorazowe pobranie wag; potem działa całkowicie offline. Żadne dane nie opuszczają maszyny |
 
-Wybór (szczegóły pomiarów w `reports/T016.md`): sprawdzono Qwen3 0,6B / 1,7B / 4B i Bielik 1,5B v3 (wszystkie
+Wybór (pomiary własne zespołu): sprawdzono Qwen3 0,6B / 1,7B / 4B i Bielik 1,5B v3 (wszystkie
 Apache-2.0). Najlepszy na naszych słabych polach był Qwen3-1.7B (15/25 pytań poprawnie, wszystkie cytaty w tekście);
 0,6B zmyśla, 4B nie jest lepszy, a potrzebuje 5 GB.
 

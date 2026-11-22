@@ -23,7 +23,7 @@ Format pliku:
 description: jedna linijka
 ocr: {enabled: true}      # OCR stron bez warstwy tekstowej
 ingest: {dpi: 200}        # dowolna opcja PdfIngestor (ingest.dpi, ingest.cache, ingest.cache_dir, ingest.preprocess)
-reader: null              # miejsce na lokalny model (T016)
+reader: null              # lokalny model (profil `llm`, patrz LLM.md)
 ```
 
 `ingest.preprocess: none | levels` (domyślnie `levels`, zmienna `ODW2JSON_PREPROCESS` ma pierwszeństwo) czyści obraz strony
@@ -97,7 +97,7 @@ Gdy nie ma wiersza odniesienia, bramka przepuszcza. Dane UZP nie są w CI, więc
 
 ## Domyślna liczba procesów
 
-Pomiar na i7 (8 wątków) / 16 GB, szczegóły w raporcie T012: `--workers 4` daje 1,7 do 2,8 razy większą przepustowość niż
+Pomiar na i7 (8 wątków) / 16 GB, szczegóły pomiaru w katalogu `bench/`: `--workers 4` daje 1,7 do 2,8 razy większą przepustowość niż
 `--workers 1` przy szczycie pamięci ok. 0,5 GB dla tekstu i ok. 2,3 GB dla skanów czytanych OCR-em na zimno. Dlatego
 domyślne `min(4, rdzenie // 2)` jest bezpieczne (daleko poniżej 8 GB). Każdy proces roboczy dostaje
 `rdzenie // workers` wątków onnxruntime (zmienna `ODW2JSON_OCR_THREADS`), żeby cztery procesy nie konkurowały

@@ -40,7 +40,7 @@ fields:
       - {use: after_label, labels: ["rachun\\w* (obciazany|nadawcy|zleceniodawcy|platnika)", "z rachunku( nr)?"], value: "(pl)?\\s?\\d{2}( ?\\d{4}){6}"}
       - {use: after_label, labels: ["(dane )?(platnik|nadawc|zleceniodawc)\\w*"], value: "(pl)?\\s?\\d{2}( ?\\d{4}){6}", max_lines: 4}
       - {use: regex, pattern: '(?<![\w])(?P<v>(?:pl)?\s?\d{2}(?:\s?\d{4}){6})(?!\s?\d)', nth: 0}
-    normalize: iban_pl
+    normalize: iban_pl_as_printed
     validate: iban
 
   - path: przelew_bankowy.na_rachunek
@@ -50,7 +50,7 @@ fields:
       # letter layout: "... na rachunek nr PL10 3863 ... 4853" with the last group wrapped to the next line
       - {use: regex, pattern: 'na rachunek(?: nr)?:?\s*(?P<v>(?:pl)?\s?\d{2}(?:\s?\d{4}){6})'}
       - {use: regex, pattern: '(?<![\w])(?P<v>(?:pl)?\s?\d{2}(?:\s?\d{4}){6})(?!\s?\d)', nth: 1}
-    normalize: iban_pl
+    normalize: iban_pl_as_printed
     validate: iban
 
   - path: przelew_bankowy.numer_transakcji

@@ -10,6 +10,7 @@ MIN_LETTER_RATIO = 0.6
 MAX_BAD_RATIO = 0.05
 _LINE_OVERLAP = 0.5  # a word joins a line when it overlaps the line's y-range by this share of the smaller height
 _BLOCK_GAP = 1.0  # blank line when the gap between lines exceeds this many median line heights
+_COLUMN_GAP = 0.8  # a label is a column header when the gap after it exceeds this many line heights
 _DECORATION = frozenset("-_.=*~|+—–…")
 _CID =re.compile(r"\(cid:\d+\)")
 
@@ -43,7 +44,39 @@ def group_lines(words: list[Word]) -> list[list[Word]]:
         if not placed:
             lines.append([cy, 1, h, [word]])
     lines.sort(key=lambda ln: ln[0] / ln[1])
-    return [sorted(ln[3], key=lambda x: x.x0) for ln in lines]
+    return _label_before_block([sorted(ln[3], key=lambda x: x.x0) for ln in lines])
+
+
+def _height(line: list[Word]) -> float:
+    return max(w.y1 for w in line) - min(w.y0 for w in line)
+
+
+def _label_before_block(lines: list[list[Word]]) -> list[list[Word]]:
+    """Two-column header: a label centred beside a wrapped value reads before the whole value.
+
+    Reading order puts the label on the line where the value's vertical middle is, so the value starts above it. A
+    line that starts with a short `label:` word, then a wide column gap and the value column, takes the label off and
+    puts it in front of the directly preceding lines that start at that value column (at most four, touching).
+    """
+    out = list(lines)
+    i = 1
+    while i < len(out):
+        ln = out[i]
+        h = _height(ln)
+        if len(ln) >= 2 and ln[0].text.endswith(":") and ln[1].x0 - ln[0].x1 > _COLUMN_GAP * h:
+            vx, tol = ln[1].x0, 0.5 * h
+            j, top = i, min(w.y0 for w in ln)
+            while j > 0 and i - j < 4:
+                prev = out[j - 1]
+                if (abs(prev[0].x0 - vx) > tol or top - max(w.y1 for w in prev) > 0.5 * h
+                        or prev[0].text.endswith(":")):
+                    break
+                j, top = j - 1, min(w.y0 for w in prev)
+            if j < i:
+                out[j] = [ln[0]] + out[j]
+                out[i] = ln[1:]
+        i += 1
+    return out
 
 
 def build_text(words: list[Word]) -> str:

@@ -64,3 +64,26 @@ class GarbageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TwoColumnLabelTests(unittest.TestCase):
+    """A label in a left column, centred beside a wrapped value in the right column, reads before the whole value."""
+
+    def _page(self):
+        return [
+            w("Intro", 100, 0, 150, 20),
+            w("First", 300, 40, 340, 60), w("name", 345, 40, 385, 60), w("line", 390, 40, 420, 60),
+            w("Label:", 100, 62, 200, 82), w("second", 300, 62, 360, 82),
+            w("City", 400, 85, 440, 105),
+        ]
+
+    def test_label_moves_before_the_wrapped_block(self):
+        self.assertEqual(build_text(self._page()), "Intro\n\nLabel: First name line\nsecond\nCity".replace("Intro\n\n", "Intro\n"))
+
+    def test_plain_label_value_line_is_unchanged(self):
+        words = [w("Label:", 100, 40, 160, 60), w("value", 165, 40, 210, 60), w("Above", 300, 15, 350, 35)]
+        self.assertEqual(build_text(words), "Above\nLabel: value")
+
+    def test_no_value_above_means_no_move(self):
+        words = [w("Above", 100, 15, 150, 35), w("Label:", 100, 40, 160, 60), w("value", 300, 40, 350, 60)]
+        self.assertEqual(build_text(words), "Above\nLabel: value")

@@ -88,7 +88,8 @@ fields:
       - {use: regex, pattern: '^odwo\w{0,3}ujac\w*\s*:\s*konsorcjum[\s\S]{0,300}?(?:lider\w*|partner\w*)\s+konsorcjum\w*\s*:[ \t]*\n\s*(?P<v>[^\n]+)'}
       # a consortium: "Odwołujący: Konsorcjum wykonawców:" / "1) Lider sp. k. (Lider Konsorcjum)": the first member
       - {use: regex, pattern: '^odwo\w{0,3}ujac\w*\s*:\s*konsorcjum[^\n]*\n\s*(?:1[.)]\s*)?(?P<v>[^\n(]+?)\s*(?:\(|,\s|\n)'}
-      - {use: regex, pattern: "^odwo\\w{0,3}ujac\\w*\\s*:[ \\t]*\\n*\\s*(?P<v>[^\\n]+)"}
+      # not a contact label: with a two-column header the name can sit above the label (then it is not read here)
+      - {use: regex, pattern: "^odwo\\w{0,3}ujac\\w*\\s*:(?!\\s*(?:krs|nip|regon|tel|fax|e-?mail)\\b)[ \\t]*\\n*\\s*(?P<v>[^\\n]+)"}
     normalize: company
   - path: Odwolujacy.krs
     section: odwolujacy
@@ -108,7 +109,7 @@ fields:
   - path: Odwolujacy.pelnomocnik.imie_nazwisko
     section: odwolujacy
     strategies:
-      - {use: regex, pattern: 'reprezentowan\w*\s+przez[.:]?\s*(?:p\w{2,3}nomocnik\w*[.:]?\s*)?(?:(?:r\.\s?pr\.|adw\.|radc\w*\s+prawn\w*|adwokat\w*|mec\.)\s*)?(?P<v>[a-z]+\s+[a-z-]+)'}
+      - {use: regex, pattern: 'reprezentowan\w*\s+przez[.:]?\s*(?:p\w{2,3}nomocnik\w*[.:]?\s*)?(?:(?:r\.\s?pr\.|adw\.|radc\w*\s+prawn\w*|adwokat\w*|mec\.)\s*)?(?<![a-z])(?!(?:kancelari|biur|firm|spolk|radc|adwokat|prawn)\w*\s)(?P<v>[a-z]+\s+[a-z-]+)'}
     normalize: strip
   - path: Odwolujacy.pelnomocnik.nazwa
     section: odwolujacy
@@ -124,8 +125,10 @@ fields:
   - path: Odwolujacy.przez-pelnomocnika
     strategies:
       # represented as soon as ANY attorney field was found (the name itself may be unreadable in a scan)
+      - {use: regex, section: odwolujacy, pattern: '(?P<v>reprezentowan\w*\s+przez\s+(?:p\w{2,3}nomocnik\w*\s+)?(?:r\.\s?pr|adw\.|radc|adwokat|mec\.|kancelari))'}
       - {use: derived, if_set: Odwolujacy.pelnomocnik.imie_nazwisko, value: 1}
       - {use: derived, if_set: Odwolujacy.pelnomocnik.nazwa, value: 1, else: 0}
+    normalize: flag
 
   # prose intro "... (dalej: „Zamawiający”)"; a labelled "Zamawiający:" block below overwrites it
   - path: Zamawiajacy.nazwa
@@ -217,6 +220,8 @@ fields:
       - {use: regex, pattern: "pn\\.?:?\\s*[\"„”](?P<v>[^\"”]+)[\"”]"}
       # scans: the opening quote is often lost and the title wraps over lines: pn. Title", nr referencyjny
       - {use: regex, pattern: 'pn\.?:?\s*[„”",\s]*(?P<v>[^"„”\n][^"„”]{8,}?)["”„]?\s*,\s*(?:nr|numer)\s*(?:referencyjn|postepowania|sprawy)'}
+      # "pn.: <title>" (postepowanie nr ...)": the title ends at the closing quote and the bracket with the number
+      - {use: regex, pattern: 'pn\.?:?\s*[„”",\s]*(?P<v>[^"„”\n][^"„”]{8,}?)["”„]?\s*\(\s*(?:postepowanie\s+)?(?:nr|numer)\b'}
     normalize: [strip, ocr_text, restore_diacritics]
 
 # Optional local-LLM reader (profile `llm`, docs/LLM.md): asked only for fields the rules above left empty. The model

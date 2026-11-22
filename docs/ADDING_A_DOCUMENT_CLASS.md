@@ -122,8 +122,8 @@ pole jest pomijane.
 | `strategies` | lista prób w kolejności; wygrywa pierwszy kandydat, który przejdzie normalizację |
 | `normalize` | nazwa lub lista normalizatorów (poniżej) |
 | `validate` | walidator sumy kontrolnej; niezgodność obniża pewność do 0,5, wartość zostaje |
-| `dedupe` | *(T018)* `{fuzzy: N}` na polu listy (`lista[].pole` z `all: true` albo lista scalana przez `list_of_blocks.merge`): scala elementy, które wskazują tę samą osobę. Imiona są takie same po zwinięciu wielkości liter i polskich znaków albo różnią się o najwyżej `fuzzy` znaków (domyślnie `fuzzy: 0`: samo zwinięcie, które łączy `Zawadżki` / `Zawadzki` i `JAN KOWALSKI` / `Jan Kowalski`; `fuzzy: 1` zlałoby też różne osoby, np. `Kowalski` / `Kowalska`, więc receptury go nie używają). Zostaje zapis z małymi literami zamiast WERSALIKÓW, a przy remisie późniejszy (podpis) |
-| `attach_to`, `window` | *(T018)* pole `lista[].pole` z `attach_to: lista[].klucz`: wartość drukowana obok każdego elementu już odczytanej listy, szukana osobno dla każdego elementu w tekście za jego wystąpieniem, do wystąpienia następnego elementu (najwyżej `window` znaków, domyślnie 200). Przykład: PESEL każdego pełnomocnika. Gdy imię występuje kilka razy (np. w nagłówku kancelarii), liczy się pierwsze wystąpienie, po którym jest wartość |
+| `dedupe` | `{fuzzy: N}` na polu listy (`lista[].pole` z `all: true` albo lista scalana przez `list_of_blocks.merge`): scala elementy, które wskazują tę samą osobę. Imiona są takie same po zwinięciu wielkości liter i polskich znaków albo różnią się o najwyżej `fuzzy` znaków (domyślnie `fuzzy: 0`: samo zwinięcie, które łączy `Zawadżki` / `Zawadzki` i `JAN KOWALSKI` / `Jan Kowalski`; `fuzzy: 1` zlałoby też różne osoby, np. `Kowalski` / `Kowalska`, więc receptury go nie używają). Zostaje zapis z małymi literami zamiast WERSALIKÓW, a przy remisie późniejszy (podpis) |
+| `attach_to`, `window` | pole `lista[].pole` z `attach_to: lista[].klucz`: wartość drukowana obok każdego elementu już odczytanej listy, szukana osobno dla każdego elementu w tekście za jego wystąpieniem, do wystąpienia następnego elementu (najwyżej `window` znaków, domyślnie 200). Przykład: PESEL każdego pełnomocnika. Gdy imię występuje kilka razy (np. w nagłówku kancelarii), liczy się pierwsze wystąpienie, po którym jest wartość |
 | `list_of_blocks` + `fields` | lista obiektów: każdy `start` otwiera blok (opcjonalnie `end`, `max`), pola zagnieżdżone liczone w bloku |
 
 Kilka wpisów o tej samej ścieżce wykonuje się po kolei, a późniejszy nadpisuje wcześniejszy, jeśli znajdzie wartość.
@@ -132,17 +132,17 @@ Daje to regułę ogólną z precyzyjną regułą na wierzchu.
 ### Strategie (`use:`)
 | Strategia | Klucze | Co robi |
 |---|---|---|
-| `regex` | `pattern`, `all`, `raw`, `nth` | dopasowanie wzorca; wartość to grupa `v` (albo grupa 1, albo całe dopasowanie); `raw: true` *(gałąź T013)* = z wielkością liter na oryginalnym tekście; `nth: N` *(T014)* = tylko N-te różne trafienie (0 pierwsze, -1 ostatnie), np. rachunek nadawcy, potem odbiorcy |
+| `regex` | `pattern`, `all`, `raw`, `nth` | dopasowanie wzorca; wartość to grupa `v` (albo grupa 1, albo całe dopasowanie); `raw: true` = z wielkością liter na oryginalnym tekście; `nth: N` = tylko N-te różne trafienie (0 pierwsze, -1 ostatnie), np. rachunek nadawcy, potem odbiorcy |
 | `after_label` | `labels`, `value`, `max_lines`, `below` | wartość na prawo od etykiety (do przerwy kolumnowej) albo w linii pod etykietą w tej samej kolumnie (siatki bankowe); `value` = wymagany kształt wartości |
 | `between` | `start`, `end` | tekst między dwoma wzorcami (domyślnie do pustej linii), łączy przeniesienia wierszy |
 | `lookup` | `dictionary`, `return` | wpis słownika z najwcześniej występującą frazą; zwraca `id` (lub `label`, ...) |
 | `const` | `value` | stała |
 | `derived` | `if_set`, `value`, `else` | `value`, gdy pole `if_set` jest ustawione, inaczej `else` |
-| `segments` | `value`, `exclude`, `not_after`, `raw` | *(gałąź T005, po scaleniu)* wartości w kolumnach linii (np. podpisy pod kropkami); `raw: true` = dopasowanie z wielkością liter |
+| `segments` | `value`, `exclude`, `not_after`, `raw` | wartości w kolumnach linii (np. podpisy pod kropkami); `raw: true` = dopasowanie z wielkością liter |
 
-*(T014)* Każda strategia może mieć `section: <nazwa>`: szuka wtedy tylko w tej sekcji receptury (jedno pole: najpierw wzorzec z całego dokumentu, potem z sekcji; gdy sekcji nie ma, strategia jest pomijana).
+Każda strategia może mieć `section: <nazwa>`: szuka wtedy tylko w tej sekcji receptury (jedno pole: najpierw wzorzec z całego dokumentu, potem z sekcji; gdy sekcji nie ma, strategia jest pomijana).
 
-*(gałąź T005, po scaleniu)* `list_of_blocks` dostaje `min_blocks` (mniej początków bloków niż N = jeden blok na
+`list_of_blocks` dostaje `min_blocks` (mniej początków bloków niż N = jeden blok na
 cały zakres, np. jeden mocodawca zamiast konsorcjum) i `merge` (bloki dołączane po kolei do istniejącej listy, np.
 grupy podpisów „W imieniu X:” do mocodawców).
 
@@ -154,17 +154,18 @@ grupy podpisów „W imieniu X:” do mocodawców).
 | `digits` | same cyfry |
 | `int` | liczba całkowita |
 | `iban_pl` | 26 cyfr rachunku bez `PL` i spacji |
+| `iban_pl_as_printed` | jak `iban_pl`, ale na stronie ze skanu (OCR) zachowuje wydrukowany prefiks `PL` (`PL62…`); ze strony z warstwą tekstową zawsze same cyfry. Normalizator „świadomy strony”: dostaje źródło strony (`text`/`ocr`) |
 | `ted` | numer TED jako `NNNNNN-RRRR` (także z `RRRR/S NNN-NNNNNN`) |
 | `bzp` | numer BZP bez spacji |
 | `strip` | pojedyncze spacje, bez przecinków/dwukropków na brzegach |
 | `unquote` | jak `strip` i bez cudzysłowów |
 | `upper`, `title` | wielkie litery / każde słowo wielką literą |
-| `person` | *(gałąź T013)* imię i nazwisko; zapis WERSALIKAMI zamieniony na „Jan Kowalski-Nowak”; *(T018)* sklejone słowa „HalinaBaran” → „Halina Baran” (obie części wielką literą i co najmniej 2 litery; tylko tu, nazwy firm jak `BudMax` zostają) |
-| `company` | *(gałąź T013)* nazwa firmy z poprawką typowych błędów OCR w formie prawnej („Sp. z 0.o.” → „Sp. z o.o.”) |
-| `ocr_text` | *(T014)* tekst po OCR: litery z tyldą (Ñ → Ń) i dwukropek w numerze sprawy zamiast kropki (`DA.ZP:242.13.2026`) |
-| `restore_diacritics` | *(T014)* przywraca polskie znaki wyrazom ze słownika `dictionaries/polish_words.txt` (zachowuje wielkość liter, naprawia też złe akcenty: „Lódź” → „Łódź”; wyrazów niejednoznacznych i nieznanych nie rusza) |
-| `flag` | *(T014)* 1, gdy fraza-znacznik została znaleziona (treść dopasowania jest bez znaczenia) |
-| `ocr_digits` | *(gałąź T013)* cyfry identyfikatora po OCR: `o`/`O` → 0, `l`/`I` → 1 |
+| `person` | imię i nazwisko; zapis WERSALIKAMI zamieniony na „Jan Kowalski-Nowak”; sklejone słowa „HalinaBaran” → „Halina Baran” (obie części wielką literą i co najmniej 2 litery; tylko tu, nazwy firm jak `BudMax` zostają) |
+| `company` | nazwa firmy z poprawką typowych błędów OCR w formie prawnej („Sp. z 0.o.” → „Sp. z o.o.”) |
+| `ocr_text` | tekst po OCR: litery z tyldą (Ñ → Ń) i dwukropek w numerze sprawy zamiast kropki (`DA.ZP:242.13.2026`) |
+| `restore_diacritics` | przywraca polskie znaki wyrazom ze słownika `dictionaries/polish_words.txt` (zachowuje wielkość liter, naprawia też złe akcenty: „Lódź” → „Łódź”; wyrazów niejednoznacznych i nieznanych nie rusza) |
+| `flag` | 1, gdy fraza-znacznik została znaleziona (treść dopasowania jest bez znaczenia) |
+| `ocr_digits` | cyfry identyfikatora po OCR: `o`/`O` → 0, `l`/`I` → 1 |
 
 ### Walidatory (`validate:`)
 `nip`, `regon` (9 lub 14 cyfr), `pesel`, `krs` (10 cyfr), `iban` (mod 97).
