@@ -39,7 +39,7 @@ flowchart LR
 | `recipes/`, `dictionaries/` | Konfiguracja klas dokumentów: sygnały klasyfikacji, sekcje, pola i strategie, słowniki kodów (np. `czynnosc_powod`). |
 | `schemas/` | Szkielety wyjściowego JSON dla każdej klasy (kolejność i komplet pól jak u UZP). |
 | `web/` | FastAPI + statyczny interfejs (identyfikacja Cold Trace). Pozwala wgrać PDF-y sprawy i zobaczyć klasę, wynik, JSON i tabelę dowodów z pewnością każdego pola, a także pobrać ZIP. |
-| `eval/` | `score.py`: lokalna miara F1 na poziomie pól (dokładna i znormalizowana), raport najgorszych pól; `make_noisy.py`: zaszumione skany do testu odporności OCR. |
+| `eval/` | `score.py`: lokalna miara F1 na poziomie pól (dokładna i znormalizowana), raport najgorszych pól; `make_noisy.py`: zaszumione skany do testu odporności OCR; `make_synth.py`: zróżnicowane syntetyczne sprawy (inne układy niż UZP, skany faks/ksero/telefon) z wzorcowymi JSON-ami. |
 
 ## Model danych
 `Document` → `Page` (numer, wymiary, `words` z ramkami i pewnością OCR, `text`, `source`: `text` albo `ocr`).

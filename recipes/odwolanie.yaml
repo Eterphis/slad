@@ -13,6 +13,8 @@ classify:
     - {pattern: "zamawiajac\\w*\\s*:", weight: 1}
   forbidden:
     - {pattern: "see the notice on ted website|ogloszenie o zamowieniu lub ogloszenie o koncesji", head: 600}
+    # an e-mail printout that forwards the appeal ("Od: ... Do: ... Temat: Kopia odwołania")
+    - {pattern: '^od:[^\n]*\n(?:[^\n]*\n){0,3}?do:[^\n]*\n(?:[^\n]*\n){0,4}?(?:temat|subject):', head: 400}
     # a KIO ruling (wyrok / postanowienie) quotes the appeal but is not one
     - {pattern: 'sygn\.? ?akt:? ?kio.{0,200}?(?:postanowienie|wyrok)|(?:postanowienie|wyrok)\b.{0,200}?sygn\.? ?akt|krajowa izba odwolawcza\s*-?\s*w skladzie|przewodniczac\w*\s*:', head: 1200}
 
@@ -74,7 +76,7 @@ fields:
   - path: Odwolujacy.pelnomocnik.imie_nazwisko
     strategies:
       - {use: regex, pattern: '\(\s*(?:dalej|zwan\w*)[^)]{0,40}?odwo\w{0,3}ujac[^)]*\)[^()]{0,80}?reprezentowan\w* przez:?\s*(?:pelnomocnika:?\s*)?(?:r\.\s?pr\.|adw\.|radc\w* prawn\w*|adwokat\w*|mec\.)\s*(?P<v>[a-z]+\s+[a-z-]+)'}
-    normalize: strip
+    normalize: person_nom
   - path: Odwolujacy.pelnomocnik.mail
     strategies:
       - {use: regex, pattern: '\(\s*(?:dalej|zwan\w*)[^)]{0,40}?odwo\w{0,3}ujac[^)]*\)[^()]{0,80}?reprezentowan\w* przez[^@]{0,300}?(?P<v>[\w.+-]+@[\w-]+(?:\.[\w-]+)+)'}
@@ -88,6 +90,8 @@ fields:
       - {use: regex, pattern: '^odwo\w{0,3}ujac\w*\s*:\s*konsorcjum[\s\S]{0,300}?(?:lider\w*|partner\w*)\s+konsorcjum\w*\s*:[ \t]*\n\s*(?P<v>[^\n]+)'}
       # a consortium: "Odwołujący: Konsorcjum wykonawców:" / "1) Lider sp. k. (Lider Konsorcjum)": the first member
       - {use: regex, pattern: '^odwo\w{0,3}ujac\w*\s*:\s*konsorcjum[^\n]*\n\s*(?:1[.)]\s*)?(?P<v>[^\n(]+?)\s*(?:\(|,\s|\n)'}
+      # "Odwołujący: Wykonawcy wspólnie ubiegający się o udzielenie zamówienia:" / "1) <leader> (Lider konsorcjum)"
+      - {use: regex, pattern: '^odwo\w{0,3}ujac\w*\s*:?\s*(?:\n\s*)?wykonawc\w*\s+wspolnie\s+ubiegajac\w*[^\n]*\n\s*(?:1[.)]\s*)?(?P<v>[^\n(]+?)\s*(?:\(|,\s|\n)'}
       # not a contact label: with a two-column header the name can sit above the label (then it is not read here)
       - {use: regex, pattern: "^odwo\\w{0,3}ujac\\w*\\s*:(?!\\s*(?:krs|nip|regon|tel|fax|e-?mail)\\b)[ \\t]*\\n*\\s*(?P<v>[^\\n]+)"}
     normalize: company
@@ -110,7 +114,7 @@ fields:
     section: odwolujacy
     strategies:
       - {use: regex, pattern: 'reprezentowan\w*\s+przez[.:]?\s*(?:p\w{2,3}nomocnik\w*[.:]?\s*)?(?:(?:r\.\s?pr\.|adw\.|radc\w*\s+prawn\w*|adwokat\w*|mec\.)\s*)?(?<![a-z])(?!(?:kancelari|biur|firm|spolk|radc|adwokat|prawn)\w*\s)(?P<v>[a-z]+\s+[a-z-]+)'}
-    normalize: strip
+    normalize: person_nom
   - path: Odwolujacy.pelnomocnik.nazwa
     section: odwolujacy
     strategies:
@@ -214,7 +218,7 @@ fields:
     normalize: ted
   - path: ZamowieniePubliczne.numer_postepowania
     strategies:
-      - {use: regex, pattern: "(?:nr\\s*referencyjn\\w*(?:\\s+sprawy)?|numer\\s+postepowania|nr\\s+postepowania|postepowanie\\s+nr|znak\\s+sprawy)\\s*:?\\s*(?P<v>[a-z0-9][\\w./-]*[a-z0-9])"}
+      - {use: regex, pattern: "(?:nr\\s+postepowania\\s+u\\s+zamawiajacego|znak\\s+postepowania|numer\\s+sprawy|nr\\s+sprawy|oznaczenie\\s+sprawy|nr\\s*referencyjn\\w*(?:\\s+sprawy)?|numer\\s+postepowania|nr\\s+postepowania|postepowanie\\s+nr|znak\\s+sprawy)\\s*:?\\s*(?P<v>[a-z0-9][\\w./-]*[a-z0-9])"}
   - path: ZamowieniePubliczne.tytul
     strategies:
       - {use: regex, pattern: "pn\\.?:?\\s*[\"„”](?P<v>[^\"”]+)[\"”]"}

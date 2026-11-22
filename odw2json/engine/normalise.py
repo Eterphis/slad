@@ -294,3 +294,99 @@ def restore_diacritics(s: str) -> str | None:
         return good.upper() if len(w) > 1 and w.isupper() else good.capitalize() if w[0].isupper() else good
 
     return re.sub(r"[^\W\d_]+", fix, s) if s else s
+
+
+# Declined Polish names -> nominative: "Tomasza Srokosza" / "radcę ... Annę Nowicką" / "Panu Andrzejowi Zielińskiemu".
+# Fires only when the first word is a known declined first name (a nominative name is left alone), and only then
+# rewrites the surname with the matching gender's case endings.
+_MALE_NAMES = ("Adam Adrian Aleksander Andrzej Antoni Arkadiusz Artur Bartłomiej Bartosz Bogdan Bogusław Cezary Damian "
+               "Daniel Dariusz Dawid Dominik Edward Emil Eryk Filip Franciszek Grzegorz Henryk Hubert Igor Ireneusz "
+               "Jacek Jakub Jan Janusz Jarosław Jerzy Józef Julian Kacper Kamil Karol Kazimierz Konrad Krystian Krzysztof "
+               "Leszek Łukasz Maciej Marcin Marek Marian Mariusz Mateusz Michał Mieczysław Mikołaj Mirosław Norbert "
+               "Oskar Patryk Paweł Piotr Przemysław Radosław Rafał Robert Roman Ryszard Sebastian Stanisław Szymon "
+               "Sławomir Tadeusz Tomasz Waldemar Wiesław Wiktor Witold Władysław Wojciech Zbigniew Zdzisław Zenon").split()
+_FEMALE_NAMES = ("Agata Agnieszka Aleksandra Alicja Aneta Angelika Anna Barbara Beata Bożena Danuta Dominika Dorota "
+                 "Edyta Elżbieta Emilia Ewa Ewelina Grażyna Halina Hanna Helena Irena Iwona Izabela Jadwiga Joanna "
+                 "Jolanta Julia Justyna Kamila Karolina Katarzyna Kinga Klaudia Krystyna Lucyna Magdalena Maja "
+                 "Małgorzata Maria Marta Marzena Monika Natalia Olga Patrycja Paulina Renata Sabina Sylwia Teresa "
+                 "Urszula Wanda Weronika Wiesława Wioletta Zofia Żaneta").split()
+
+
+def _male_forms(n: str) -> list[str]:
+    if n.endswith("y") or n.endswith("i"):                     # Jerzy, Antoni
+        b = n if n.endswith("i") else n[:-1]
+        return [b + "ego", b + "emu"]
+    stem = n
+    if n.endswith("ek"):
+        stem = n[:-2] + "k"                                    # Marek -> Marka, Jacek -> Jacka
+    elif n.endswith("eł"):
+        stem = n[:-2] + "ł"                                    # Paweł -> Pawła
+    return [stem + "a", stem + "owi"]
+
+
+_DAT_F = (("ka", "ce"), ("ga", "dze"), ("ra", "rze"), ("ta", "cie"), ("da", "dzie"), ("ła", "le"), ("ia", "ii"), ("ja", "i"))
+
+
+def _female_forms(n: str) -> list[str]:
+    stem = n[:-1]
+    gen = stem + ("i" if stem[-1] in "kgl" else "ii" if n.endswith("ia") else "y")
+    dat = next((n[:-len(a)] + b for a, b in _DAT_F if n.endswith(a)), stem + "ie")
+    return [stem + "ę", gen, dat]
+
+
+_DECLINED: dict[str, tuple[str, str]] = {}
+for _n in _MALE_NAMES:
+    for _f in _male_forms(_n):
+        _DECLINED.setdefault(_f, (_n, "m"))
+for _n in _FEMALE_NAMES:
+    for _f in _female_forms(_n):
+        if _f not in _FEMALE_NAMES:
+            _DECLINED.setdefault(_f, (_n, "f"))
+_NOMINATIVE = set(_MALE_NAMES) | set(_FEMALE_NAMES)
+
+
+def _surname_nom(s: str, gender: str) -> str:
+    low = s.lower()
+    if gender == "f":
+        for a, b in (("ską", "ska"), ("cką", "cka"), ("dzką", "dzka"), ("skiej", "ska"), ("ckiej", "cka"),
+                     ("ową", "owa"), ("owej", "owa")):
+            if low.endswith(a):
+                return s[:-len(a)] + b
+        return s
+    for a, b in (("skiego", "ski"), ("ckiego", "cki"), ("dzkiego", "dzki"), ("skiemu", "ski"), ("ckiemu", "cki"),
+                 ("dzkiemu", "dzki")):
+        if low.endswith(a):
+            return s[:-len(a)] + b
+    if low.endswith("owi"):
+        stem = s[:-3]
+    elif low.endswith("a") and len(s) > 3 and low[-2] not in "aeiouyąęó":
+        stem = s[:-1]
+    else:
+        return s
+    if re.search(r"[^aeiouyąęó][kl]$", stem.lower()):          # Kaczmarka -> Kaczmarek, Wróbla -> Wróbel
+        stem = stem[:-1] + "e" + stem[-1]
+    return stem
+
+
+@register_normaliser("person_nom")
+def person_nom(s: str) -> str | None:
+    """`person`, then a declined "first-name surname" turned into the nominative ("Tomasza Srokosza" -> "Tomasz Srokosz")."""
+    v = person(s)
+    if not v:
+        return v
+    parts = v.split(" ")
+    if len(parts) != 2 or parts[0] in _NOMINATIVE and parts[0] not in _DECLINED:
+        return v
+    first, last = parts
+    hit = _DECLINED.get(first)
+    if not hit:
+        return v
+    nom, gender = hit
+    if gender == "m" and last.lower().endswith(("ska", "cka", "dzka", "owa", "ówna")):  # "Jana Kowalska": a woman
+        return v
+    if first in _NOMINATIVE:                                   # "Kamila": female name or "Kamil" in the genitive
+        low = last.lower()
+        male_case = low.endswith(("iego", "iemu", "owi")) or (low.endswith("a") and not low.endswith(("ska", "cka", "dzka", "owa")))
+        if not male_case:
+            return v
+    return f"{nom} {_surname_nom(last, gender)}"

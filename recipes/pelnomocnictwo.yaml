@@ -107,8 +107,10 @@ fields:
 
   - path: pelnomocnicy[].imie_nazwisko
     strategies:
-      - {use: regex, all: true, pattern: '(?:r\.\s?pr\.|adw\.|radca prawny|adwokat(?![a-z]))\s+(?P<v>[a-z]+\s+[a-z-]+)'}
-    normalize: person
+      - {use: regex, all: true, pattern: '(?:r\.\s?pr\.|adw\.|radc[ay] prawn(?:y|ego)|adwokat(?:a|owi)?(?![a-z]))\s+(?P<v>[a-z]+\s+[a-z-]+)'}
+      # "udzielam pełnomocnictwa Panu Andrzejowi Zielińskiemu, PESEL ..." (the KIO template, dative)
+      - {use: regex, all: true, pattern: '(?:pelnomocnictwa|upowazniam\w*)\s+(?:[^.]{0,200}?\s)?(?:panu|pani)\s+(?P<v>[a-z]+\s+[a-z-]+)'}
+    normalize: person_nom
     dedupe: {}  # the letterhead prints the same attorney in capitals
 
   # "... udziela pełnomocnictwa: 1. Jan Kowal – adwokat ... 2. ..." or "X (adwokat, ...) oraz Y (radca prawny, ...)";
@@ -117,7 +119,7 @@ fields:
     section: lista_pelnomocnikow
     strategies:
       - {use: regex, all: true, raw: true, pattern: '(?<![\w.])(?P<v>[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?|[A-ZĄĆĘŁŃÓŚŹŻ]{2,}(?:-[A-ZĄĆĘŁŃÓŚŹŻ]{2,})?\s+[A-ZĄĆĘŁŃÓŚŹŻ]{2,}(?:-[A-ZĄĆĘŁŃÓŚŹŻ]{2,})?)(?![\w])'}
-    normalize: person
+    normalize: person_nom
     dedupe: {}
 
   # The PESEL printed beside each attorney: "(radca prawny, nr wpisu PO-4973, PESEL: 6910...)", "- adwokat, nr wpisu X,

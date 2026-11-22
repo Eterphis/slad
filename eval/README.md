@@ -26,3 +26,15 @@ Caveats for extractors:
   grader compares lists by index. Keep document order in lists anyway.
 - An empty string `""` counts as a value (FP when gold is null). Emit `null` for absent fields.
 - Exact mode does not bridge types (`"34.00"` vs `34.0`).
+
+## make_synth.py - varied synthetic cases (outside the UZP layouts)
+
+    python -m eval.make_synth --out ../uzp-data-synth/synth --cases 20 [--seed 2026] [--scan-share 0.35]
+    python -m odw2json --input ../uzp-data-synth/synth/input --output ../uzp-data-synth/synth/output
+    python -m eval.score --pred ../uzp-data-synth/synth/output --gold ../uzp-data-synth/synth/gold
+
+Cases built like real filings (appeal, 0-2 powers of attorney, 1-2 transfers, sometimes a non-class document that
+must give `{}`), with layouts modelled on public templates and real appeals: 6 appeal layouts, 5 power-of-attorney
+layouts (company / individual / consortium / table / dative prose), 6 bank confirmation layouts (fictitious banks),
+4 negative kinds, 4 scan modes (office, fax, copy, phone photo). Everything is fictitious; `manifest.json` lists the
+layout, font and scan mode per document for breakdowns. Needs `reportlab` (BSD, dev only, not in requirements.txt).

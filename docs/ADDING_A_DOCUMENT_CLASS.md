@@ -161,6 +161,7 @@ grupy podpisów „W imieniu X:” do mocodawców).
 | `unquote` | jak `strip` i bez cudzysłowów |
 | `upper`, `title` | wielkie litery / każde słowo wielką literą |
 | `person` | imię i nazwisko; zapis WERSALIKAMI zamieniony na „Jan Kowalski-Nowak”; sklejone słowa „HalinaBaran” → „Halina Baran” (obie części wielką literą i co najmniej 2 litery; tylko tu, nazwy firm jak `BudMax` zostają) |
+| `person_nom` | jak `person`, a odmienione imię i nazwisko sprowadzone do mianownika: „Tomasza Srokosza” → „Tomasz Srokosz”, „Panu Andrzejowi Zielińskiemu” → „Andrzej Zieliński”, „Annę Nowicką” → „Anna Nowicka”; działa tylko, gdy pierwsze słowo to znane imię w przypadku zależnym (mianownik zostaje bez zmian) |
 | `company` | nazwa firmy z poprawką typowych błędów OCR w formie prawnej („Sp. z 0.o.” → „Sp. z o.o.”) |
 | `ocr_text` | tekst po OCR: litery z tyldą (Ñ → Ń) i dwukropek w numerze sprawy zamiast kropki (`DA.ZP:242.13.2026`) |
 | `restore_diacritics` | przywraca polskie znaki wyrazom ze słownika `dictionaries/polish_words.txt` (zachowuje wielkość liter, naprawia też złe akcenty: „Lódź” → „Łódź”; wyrazów niejednoznacznych i nieznanych nie rusza) |
