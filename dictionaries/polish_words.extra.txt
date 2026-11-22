@@ -1,0 +1,20 @@
+# domain words of the three document classes; OCR often drops their diacritics
+odwołania odwołanie odwołaniu odwołujący odwołującego odwołującym
+opłata opłaty opłatę opłacie skarbowa skarbowej skarbowa
+pełnomocnictwa pełnomocnictwo pełnomocnictwu pełnomocnika pełnomocnik pełnomocnicy
+postępowaniu postępowania postępowanie postępowaniem
+zamówień zamówienia zamówieniu zamówienie publicznych publicznego
+zamawiający zamawiającego zamawiającemu
+wpis wpłata wpłaty przelew przetargu przetargowe przetargu
+radca prawny prawnego radcy adwokat adwokacka kancelaria kancelarii
+urząd urzędu zamówień publicznych miasta gminy
+płatności szczegóły szczegółów tytułem tytuł
+bank bankowy spółka sp. z o.o.
+komenda wojewódzka państwowej straży pożarnej
+muzeum regionalne ośrodek sportu rekreacji
+uniwersytet przyrodniczo techniczny szkół technicznych
+zespół powiatowy powiatowego
+centrum obsługi podatnika
+zakład gospodarki komunalnej
+zarząd dróg powiatowych
+przed kio

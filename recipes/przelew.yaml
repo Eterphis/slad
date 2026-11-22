@@ -1,0 +1,81 @@
+# Bank transfer confirmation (potwierdzenie przelewu). Output: schemas/przelew.json.
+# Patterns are matched on folded text: lower case, no diacritics.
+class: przelew
+description: Potwierdzenie wykonania przelewu (wpis / opłata skarbowa)
+classify:
+  min_score: 4
+  margin: 1
+  signals:
+    - {pattern: "przelew", weight: 2, squash: true}
+    - {pattern: "przelew", weight: 1, head: 250, squash: true}
+    - {pattern: "potwierdz|polecenie", weight: 1, head: 250}
+    - {pattern: "rachun\\w* (odbiorcy|obciazany|nadawcy|zleceniodawcy|beneficjenta|platnika|uznawany)|z rachunku|na rachunek", weight: 1}
+    - {pattern: "kwot|wartosc", weight: 1}
+    - {pattern: "tytul\\w*|numer referencyjny|nr ref|numer transakcji", weight: 1}
+    - {pattern: "transakcj|operacj|bank", weight: 1}
+  forbidden:
+    - {pattern: "see the notice on ted website|ogloszenie o zamowieniu lub ogloszenie o koncesji", head: 600}
+
+fields:
+  - path: przelew_bankowy.kwota
+    strategies:
+      - {use: after_label, labels: ["kwota( operacji| przelewu| transakcji)?", "wartosc( operacji| przelewu| transakcji)?", "suma"], value: "\\d[\\d .]*,\\d{2}|\\d+\\.\\d{2}"}
+      - {use: regex, pattern: "w kwocie (?P<v>\\d[\\d .]*(,\\d{2})?)"}
+      # statements whose header row ("Data Opis Kwota") is far from the amount: the first "<amount> PLN"
+      - {use: regex, pattern: '(?<![\d,.])-?(?P<v>\d{1,3}(?:[ .]\d{3})*,\d{2}|\d+\.\d{2})\s*(?:pln|zl)\b'}
+    normalize: amount_pl
+
+  - path: przelew_bankowy.data_operacji
+    strategies:
+      - {use: after_label, labels: ["data (operacji|transakcji|realizacji|wykonania|ksiegowania|zlecenia)"], value: "\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[./-]\\d{2}[./-]\\d{4}|\\d{1,2} [a-z]+ \\d{4}|\\d{1,2} \\d{2} \\d{4}"}
+      - {use: regex, pattern: "w dniu (?P<v>\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[./-]\\d{2}[./-]\\d{4}|\\d{1,2} [a-z]+ \\d{4})"}
+      # the label wraps: "Data 2026-03-26" / "wykonania"
+      - {use: regex, pattern: '^data\s+(?P<v>\d{4}-\d{2}-\d{2}|\d{1,2}[./-]\d{2}[./-]\d{4})[ \t]*\n[ \t]*(?:wykonania|operacji|realizacji|transakcji)'}
+    normalize: date_pl
+
+  # An account is 26 digits (optionally with "PL"); labelled first, then the sender is the first account that
+  # occurs in the document and the recipient the second.
+  - path: przelew_bankowy.z_rachunku
+    strategies:
+      - {use: after_label, labels: ["rachun\\w* (obciazany|nadawcy|zleceniodawcy|platnika)", "z rachunku( nr)?"], value: "(pl)?\\s?\\d{2}( ?\\d{4}){6}"}
+      - {use: after_label, labels: ["(dane )?(platnik|nadawc|zleceniodawc)\\w*"], value: "(pl)?\\s?\\d{2}( ?\\d{4}){6}", max_lines: 4}
+      - {use: regex, pattern: '(?<![\w])(?P<v>(?:pl)?\s?\d{2}(?:\s?\d{4}){6})(?!\s?\d)', nth: 0}
+    normalize: iban_pl
+    validate: iban
+
+  - path: przelew_bankowy.na_rachunek
+    strategies:
+      - {use: after_label, labels: ["rachun\\w* (odbiorcy|beneficjenta|adresata|uznawany|kontrahenta)", "na rachunek( nr)?"], value: "(pl)?\\s?\\d{2}( ?\\d{4}){6}"}
+      - {use: after_label, labels: ["(dane )?(odbiorc|beneficjen|adresat|kontrahent)\\w*"], value: "(pl)?\\s?\\d{2}( ?\\d{4}){6}", max_lines: 4}
+      # letter layout: "... na rachunek nr PL10 3863 ... 4853" with the last group wrapped to the next line
+      - {use: regex, pattern: 'na rachunek(?: nr)?:?\s*(?P<v>(?:pl)?\s?\d{2}(?:\s?\d{4}){6})'}
+      - {use: regex, pattern: '(?<![\w])(?P<v>(?:pl)?\s?\d{2}(?:\s?\d{4}){6})(?!\s?\d)', nth: 1}
+    normalize: iban_pl
+    validate: iban
+
+  - path: przelew_bankowy.numer_transakcji
+    strategies:
+      - {use: after_label, labels: ["nr ref\\.?( operacji)?:?", "numer referencyjny( operacji)?", "numer transakcji( operacji)?", "id transakcji", "identyfikator (transakcji|operacji)"], value: "(?=[a-z0-9/-]*\\d)[a-z0-9][a-z0-9/-]{5,}"}
+      # label wrapped: "Numer 305494" / "transakcji"
+      - {use: regex, pattern: '^numer\s+(?P<v>[a-z]{0,5}\d{4,})[ \t]*\n[ \t]*transakcji'}
+      # "Numer referencyjny transakcji" heads a column whose value sits a line or two below
+      - {use: regex, pattern: 'numer referencyjny( transakcji)?[^\n]*\n(?:[^\n]*\n){0,2}?[^\n]*?\b(?P<v>[a-z]{2,5}\d{8,})\b'}
+    normalize: unquote
+
+  # the payment title: a labelled value (title / details of payment / description); several statement layouts
+  - path: przelew_bankowy.tytul
+    strategies:
+      - {use: between, start: "^tytu\\w*(?: przelewu)?\\s*:?\\s*", end: "\\n\\s*\\n|\\n(typ|nr ref|numer|status|kanal|data|kwota|id transakcji|identyfikator|waluta|oplata|tryb|dane|zrodlo|rachunek|nazwa|adres)"}
+      - {use: between, start: "^szczego\\w+ platnosci\\s*:?\\s*", end: "\\n\\s*\\n|\\n(typ|nr ref|numer|status|kanal|data|kwota|id transakcji|identyfikator|waluta|oplata|tryb|dane|zrodlo|signature|dokument)"}
+      - {use: between, start: "^opis( przelewu)?\\s*:?\\s*\\n", end: "\\n\\s*\\n|\\n(nr ref|numer|status|typ|kanal|data|kwota|id transakcji|identyfikator|waluta|oplata|tryb|dane|rachunek|nazwa)"}
+      - {use: between, start: "^opis( przelewu)?[ \\t]*:?[ \\t]+(?=\\S)", end: "\\n\\s*\\n|\\n(nr ref|numer|status|typ|kanal|data|kwota|id transakcji|identyfikator|waluta|oplata|tryb|dane|rachunek|nazwa)"}
+    normalize: [unquote, ocr_text, restore_diacritics]
+
+# Optional local-LLM reader (profile `llm`, docs/LLM.md): only fields the rules left empty.
+llm:
+  context: {pages: 1, max_chars: 3500}
+  fields:
+    - path: przelew_bankowy.tytul
+      question: "The payment title (tytul przelewu / opis / szczegoly platnosci), exactly as printed."
+      normalize: [unquote, ocr_text, restore_diacritics]
+      when: 'tytu|szczegol|opis'

@@ -1,0 +1,6 @@
+# Text layer + recipes only. Deterministic, offline, ms per page. Scanned pages have no text, so their documents
+# are rejected and get `{}`.
+description: text layer + recipes, no OCR (scans give {})
+ocr:
+  enabled: false
+reader: null

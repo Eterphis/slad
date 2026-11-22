@@ -1,0 +1,43 @@
+# Szablon klasy dokumentu. Zmień nazwę klasy, dopisz sygnały i pola, kliknij "Sprawdź", a potem "Wypróbuj na PDF".
+# Wzorce to wyrażenia regularne Pythona dopasowywane do tekstu małymi literami i BEZ polskich znaków
+# ("wezwanie do zaplaty", nie "Wezwanie do zapłaty"). Wartość trafia do wyniku z oryginalnymi znakami.
+
+# Nazwa klasy: małe litery, cyfry i podkreślenie; to także nazwa pliku recipes/<nazwa>.yaml.
+class: nowa_klasa
+description: Krótki opis, jaki to dokument
+
+# Szkielet wyniku: JSON z pełnym zestawem pól (brakujące dostaną null). Ten plik zapisze się obok receptury.
+# Bez tej linii wynik zawiera tylko pola znalezione w dokumencie.
+output_schema: nowa_klasa.output.json
+
+classify:
+  min_score: 3        # minimum punktów, poniżej tego dokument zostaje odrzucony
+  margin: 1           # wymagana przewaga nad drugą klasą
+  signals:            # każdy trafiony sygnał dodaje swoją wagę
+    - {pattern: "wezwanie do zaplaty", weight: 3, head: 400, squash: true}   # head: tylko początek; squash: także "W E Z W A N I E"
+    - {pattern: "termin platnosci|w terminie do", weight: 1}
+    - {pattern: "kwota|nalezno", weight: 1}
+  # required: ["wezwanie"]     # wszystkie muszą wystąpić, inaczej klasa dostaje 0
+  # forbidden: ["faktura"]     # jedno trafienie zeruje klasę
+
+fields:
+  # Strategia after_label: wartość stoi za etykietą, w tej samej linii albo pod nią.
+  - path: wezwanie.kwota
+    strategies:
+      - {use: after_label, labels: ["kwota( do zaplaty)?", "nalezn\\w+"], value: "\\d[\\d .]*,\\d{2}"}
+    normalize: amount_pl           # np. "1 234,50" -> "1234.50"
+
+  # Strategia regex: wartość to grupa nazwana v (albo pierwsza grupa).
+  - path: wezwanie.termin
+    strategies:
+      - {use: regex, pattern: "w terminie do (?P<v>\\d{1,2}[./-]\\d{2}[./-]\\d{4})"}
+      - {use: after_label, labels: ["termin platnosci"]}      # druga strategia działa, gdy pierwsza nic nie znajdzie
+    normalize: date_pl
+
+  # Inne strategie (pełna lista w docs/ADDING_A_DOCUMENT_CLASS.md):
+  #   between  {use: between, start: "^tytul:\\s*", end: "\\n\\n"}      tekst między dwoma wzorcami
+  #   lookup   {use: lookup, dictionary: czynnosc_powod}                  wartość ze słownika dictionaries/
+  #   const    {use: const, value: "wezwanie"}                            stała wartość
+  # Pole można ograniczyć do sekcji: section: nadawca (sekcje opisuje blok sections: na dole pliku).
+  # sections:
+  #   - {name: nadawca, start: "^nadawca", end: "^odbiorca"}

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recipe.schema.json",
+  "title": "odw2json document class recipe",
+  "description": "One YAML file per document class. Patterns are Python regexes matched on folded text (lower case, no diacritics: write 'odwolujacy', not 'Odwołujący'). Lines are matched with re.MULTILINE.",
+  "type": "object",
+  "required": ["class", "classify"],
+  "additionalProperties": false,
+  "properties": {
+    "class": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$", "description": "Class name = output schema name in schemas/<class>.json unless output_schema is given."},
+    "description": {"type": "string"},
+    "output_schema": {"type": "string", "description": "JSON skeleton file (relative to the recipe file, or to the repo root). Default: schemas/<class>.json."},
+    "classify": {
+      "type": "object",
+      "required": ["signals"],
+      "additionalProperties": false,
+      "properties": {
+        "min_score": {"type": "number", "default": 1},
+        "margin": {"type": "number", "default": 0.5, "description": "Required lead over the runner-up recipe."},
+        "signals": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/signal"}},
+        "required": {"type": "array", "items": {"$ref": "#/$defs/patternOrSignal"}, "description": "All must match, otherwise this class scores 0."},
+        "forbidden": {"type": "array", "items": {"$ref": "#/$defs/patternOrSignal"}, "description": "Any match sets this class's score to 0."}
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "start"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "start": {"type": "string"},
+          "end": {"type": "string", "description": "Section ends before the first match after start; default = end of document."},
+          "within": {"type": "string", "description": "Name of an enclosing section to search in."},
+          "include_start": {"type": "boolean", "default": true}
+        }
+      }
+    },
+    "fields": {"$ref": "#/$defs/fields"},
+    "llm": {"$ref": "#/$defs/llmBlock"}
+  },
+  "$defs": {
+    "signal": {
+      "type": "object",
+      "required": ["pattern"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {"type": "string"},
+        "weight": {"type": "number", "default": 1},
+        "head": {"type": "integer", "minimum": 1, "description": "Only the first N chars of the whitespace-collapsed text."},
+        "squash": {"type": "boolean", "default": false, "description": "Match with all whitespace removed from text and pattern (letter-spaced headings, OCR without spaces)."}
+      }
+    },
+    "llmAsk": {"type": "object", "additionalProperties": false, "description": "Opt this field in to the optional local-LLM reader (profile llm). The model transcribes the value as printed, the recipe's normalize/validate turn it into the output value, and a quote that is not in the page text drops it.", "properties": {"question": {"type": "string", "description": "What to read, in plain words (the prompt is built from it)."}, "hint": {"type": "string", "description": "Extra guidance: where it usually stands, what it is not."}, "type": {"enum": ["string", "integer"], "default": "string"}, "choices": {"description": "The model picks one id: {dictionary: <name>} (dictionaries/<name>.yaml) or a list of {id, label}.", "oneOf": [{"type": "object", "required": ["dictionary"], "additionalProperties": false, "properties": {"dictionary": {"type": "string"}}}, {"type": "array", "items": {"type": "object", "required": ["id", "label"], "properties": {"id": {}, "label": {"type": "string"}}}}]}, "override": {"type": "boolean", "default": false, "description": "May also replace a value the recipe read with less than full confidence (OCR). A full-confidence value is never replaced."}, "when": {"type": "string", "description": "Regex on the folded document text; ask the model only when it matches (saves time)."}, "section": {"type": "string", "description": "Show the model only this recipe section."}, "also": {"type": "object", "required": ["path", "key"], "additionalProperties": false, "description": "Choices only: also set this output path to the chosen entry's key (e.g. its label).", "properties": {"path": {"type": "string"}, "key": {"type": "string"}}}}},
+    "llmBlock": {"type": "object", "additionalProperties": false, "description": "Class-level LLM reading: extra fields addressed by output JSON path, lists of items, and the context shown to the model.", "properties": {"context": {"type": "object", "additionalProperties": false, "properties": {"pages": {"type": "integer", "minimum": 1, "default": 2}, "max_chars": {"type": "integer", "minimum": 500, "default": 6000}}}, "fields": {"type": "array", "items": {"type": "object", "required": ["path"], "additionalProperties": false, "properties": {"path": {"type": "string", "description": "Output JSON path, lists as name[0]."}, "normalize": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]}, "validate": {"type": "string"}, "question": {"type": "string"}, "hint": {"type": "string"}, "type": {"enum": ["string", "integer"]}, "choices": {}, "override": {"type": "boolean"}, "when": {"type": "string"}, "section": {"type": "string"}, "also": {"type": "object"}}}}, "groups": {"type": "array", "items": {"type": "object", "required": ["path", "key", "fields"], "additionalProperties": false, "properties": {"path": {"type": "string", "description": "Output path of the list."}, "question": {"type": "string"}, "hint": {"type": "string"}, "key": {"type": "string", "description": "Item field that identifies the item (aligns the model's items with the recipe's)."}, "when": {"type": "string"}, "fields": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["path"], "additionalProperties": false, "properties": {"path": {"type": "string", "description": "Relative to the item."}, "normalize": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]}, "validate": {"type": "string"}, "question": {"type": "string"}, "hint": {"type": "string"}, "type": {"enum": ["string", "integer"]}, "override": {"type": "boolean"}}}}}}}}},
+    "patternOrSignal": {"oneOf": [{"type": "string"}, {"$ref": "#/$defs/signal"}]},
+    "fields": {"type": "array", "items": {"$ref": "#/$defs/field"}},
+    "field": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "description": "Dotted JSON path, relative to the enclosing list item for nested fields."},
+        "section": {"type": "string"},
+        "strategies": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/strategy"}},
+        "normalize": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+        "validate": {"type": "string"},
+        "dedupe": {"type": "object", "additionalProperties": false, "description": "List field (list[].key with all: true, or a list merged by list_of_blocks.merge): merge items that name the same person (equal after casefold and removing diacritics, or at most `fuzzy` characters apart). Keeps the mixed-case form, on a tie the later one.", "properties": {"fuzzy": {"type": "integer", "minimum": 0, "default": 0, "description": "Maximum number of differing characters (OCR slips)."}}},
+        "attach_to": {"type": "string", "description": "list[].key of a list already read: the field is searched for each item separately, in the text after that item's mention up to the next item's mention (e.g. the PESEL printed beside each attorney). The field path is list[].field."},
+        "window": {"type": "integer", "minimum": 1, "default": 200, "description": "attach_to: at most this many characters after the item's mention."},
+        "llm": {"$ref": "#/$defs/llmAsk"},
+        "list_of_blocks": {
+          "type": "object",
+          "required": ["start"],
+          "additionalProperties": false,
+          "properties": {
+            "start": {"type": "string", "description": "Each match starts a new block (list item)."},
+            "end": {"type": "string", "description": "Optional end of the whole list area."},
+            "max": {"type": "integer", "minimum": 1},
+            "merge": {"type": "boolean", "description": "Merge the items index-wise into the list already at this path (extra items join the last one) instead of replacing it."},
+            "min_blocks": {"type": "integer", "minimum": 1, "description": "Fewer block starts than this: one item over the whole scope (default: off, no starts = empty list)."}
+          }
+        },
+        "fields": {"$ref": "#/$defs/fields"}
+      },
+      "oneOf": [
+        {"required": ["strategies"], "not": {"anyOf": [{"required": ["fields"]}, {"required": ["list_of_blocks"]}]}},
+        {"required": ["fields", "list_of_blocks"], "not": {"required": ["strategies"]}}
+      ]
+    },
+    "strategy": {
+      "type": "object",
+      "required": ["use"],
+      "properties": {
+        "use": {"enum": ["regex", "after_label", "between", "lookup", "const", "derived", "segments"]},
+        "pattern": {"type": "string", "description": "regex: named group 'v' (or group 1) is the value."},
+        "all": {"type": "boolean", "description": "regex: every match becomes a list item (field inside a list)."},
+        "labels": {"type": "array", "items": {"type": "string"}, "description": "after_label: label regexes; a space matches optional whitespace."},
+        "value": {"description": "after_label: regex the value must contain (named group 'v' or the whole match is the value); const/derived: the value to set."},
+        "max_lines": {"type": "integer", "minimum": 1, "description": "after_label: continuation lines aligned with the value."},
+        "below": {"type": "boolean", "description": "after_label: also look in the line below in the same column (default true)."},
+        "start": {"type": "string"},
+        "end": {"type": "string"},
+        "exclude": {"type": "array", "items": {"type": "string"}, "description": "segments: skip a column segment whose text (leading dots removed) starts with one of these regexes."},
+        "not_after": {"type": "array", "items": {"type": "string"}, "description": "segments: skip a value when one of these regexes ends right before it in its segment (e.g. a title such as 'adw.')."},
+        "raw": {"type": "boolean", "description": "segments: match 'value', regex: match 'pattern', case-sensitively on the original text (diacritics kept)."},
+        "nth": {"type": "integer", "description": "regex: use only the n-th distinct match (0 first, -1 last)."},
+        "section": {"type": "string", "description": "any strategy: search only inside this named section (a section of the recipe), whatever the field's own scope."},
+        "dictionary": {"type": "string", "description": "lookup: dictionaries/<name>.yaml with entries {id, label, triggers}; triggers are regular expressions (a space matches optional whitespace), so escape literal punctuation."},
+        "return": {"type": "string", "description": "lookup: entry key to return (id, label, ...)."},
+        "if_set": {"type": "string", "description": "derived: sibling path; value when it is non-null, else 'else'."},
+        "else": {}
+      },
+      "allOf": [
+        {"if": {"properties": {"use": {"const": "regex"}}}, "then": {"required": ["pattern"]}},
+        {"if": {"properties": {"use": {"const": "after_label"}}}, "then": {"required": ["labels"]}},
+        {"if": {"properties": {"use": {"const": "between"}}}, "then": {"required": ["start"]}},
+        {"if": {"properties": {"use": {"const": "lookup"}}}, "then": {"required": ["dictionary"]}},
+        {"if": {"properties": {"use": {"const": "const"}}}, "then": {"required": ["value"]}},
+        {"if": {"properties": {"use": {"const": "derived"}}}, "then": {"required": ["if_set"]}},
+        {"if": {"properties": {"use": {"const": "segments"}}}, "then": {"required": ["value"]}}
+      ]
+    }
+  }
+}

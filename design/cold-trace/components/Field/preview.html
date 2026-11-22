@@ -1,0 +1,15 @@
+<!-- @dsCard group="Inputs" height=280 subtitle="Rest and fault; focus the first to see the charge" -->
+<div class="ct" style="padding: 24px; min-height: 100%">
+<div class="ct-fields" style="max-width: 420px">
+  <div class="ct-field">
+    <label class="ct-field__label" for="f1">Project name</label>
+    <span class="ct-input"><input id="f1" type="text" placeholder="North wall survey" aria-describedby="f1-msg"></span>
+    <p class="ct-field__msg" id="f1-msg">Shown on every report.</p>
+  </div>
+  <div class="ct-field">
+    <label class="ct-field__label" for="f2">Cable depth</label>
+    <span class="ct-input is-fault"><input id="f2" type="text" value="1600" aria-invalid="true" aria-describedby="f2-msg"><span class="ct-input__unit">m</span></span>
+    <p class="ct-field__msg is-fault" id="f2-msg">Too deep. The fjord ends at 1,308 m, so enter that or less.</p>
+  </div>
+</div>
+</div>

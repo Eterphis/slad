@@ -1,0 +1,11 @@
+# Local small-model reader (T016, docs/LLM.md). Everything `ocr` does, then a local Qwen3-1.7B (Apache-2.0, GGUF,
+# llama.cpp on CPU, ~3 GB RAM) reads fields the recipes left empty and that opt in with `llm:`. Every value needs a
+# quote found in the page text; a confident recipe value is never replaced. Fetch the weights once:
+#   python -m odw2json.llm.fetch        (sha256 checked; afterwards fully offline)
+# Without the weights or the llama-cpp-python package the run is identical to `ocr`.
+description: ocr + grounded local-LLM reader for weak fields (opt-in, slower)
+ocr:
+  enabled: true
+reader:
+  kind: llm
+  model: models/Qwen3-1.7B-Q8_0.gguf

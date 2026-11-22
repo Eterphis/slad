@@ -1,0 +1,551 @@
+@import url('https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap');
+
+/* ==========================================================================
+   Cold Trace 0.1
+   Northern lights, glacier fjords and chip wiring. One stylesheet, two modes.
+
+   Contents
+     1. Roles (dark default, light override)
+     2. Fixed tokens: shape, spacing, motion, type
+     3. Surface and type
+     4. Vias, frames, rulers
+     5. Keys
+     6. Breaker, toggle, check, radio, segmented choice
+     7. Field, slider, scroll bar
+     8. Toast, tag, table, readout
+     9. Loaders, curtain
+    10. Icons, navigation
+    11. Keyframes, reduced motion
+
+   Components read ONLY role tokens (section 1). Never write a literal colour
+   in a component rule; add or change a role instead.
+   ========================================================================== */
+
+@property --ct-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+/* 1. Roles ------------------------------------------------------------------ */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ct-ground: #000000;      /* the page */
+  --ct-panel: #000000;       /* frames, fields, toasts */
+  --ct-ink: #EAF3F7;         /* text, outlines that matter */
+  --ct-ink-2: #86A9BD;       /* captions, hints, idle labels */
+  --ct-line: #4E6E84;        /* outlines and traces at rest */
+  --ct-rule: #1E3546;        /* rules, etch, idle routing (decoration only) */
+  --ct-well: #081624;        /* inside slots and tracks */
+  --ct-sock: #1F3A4E;        /* the hard block under every key */
+  --ct-key: #EAF3F7;         /* prime key face */
+  --ct-key-ink: #000000;     /* word on the prime key */
+  --ct-flash: #EAF3F7;       /* landing spark */
+  --ct-live: #3DF5A0;        /* current on: success, charged */
+  --ct-signal: #38DDFF;      /* current near: focus, hover, selection */
+  --ct-arc: #A47BFF;         /* current carrying data: info, series two */
+  --ct-fault: #FF8A3D;       /* fault only: errors, cuts, deletes */
+  --ct-fault-sock: #4A2410;  /* the Cut key's socket */
+  --ct-series-1: #1AA3CF;    /* chart series 1 (validated pair: CVD and lightness band) */
+  --ct-series-2: #9A6CF5;    /* chart series 2 */
+  --ct-aurora: linear-gradient(90deg, #3DF5A0, #38DDFF 50%, #A47BFF);
+  --ct-frost:
+    repeating-linear-gradient(45deg, rgba(190, 215, 228, .24) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(-45deg, rgba(190, 215, 228, .12) 0 1px, transparent 1px 13px);
+  --ct-grit: url(/_blob/ad65c7edddbaa531433a488a625077cf) 0 0 / 256px 256px;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --ct-ground: #D6E5EE;      /* ice */
+  --ct-panel: #F7FBFD;       /* snow */
+  --ct-ink: #000000;
+  --ct-ink-2: #3B5263;       /* slate */
+  --ct-line: #5A7689;
+  --ct-rule: #A9C0CE;        /* hoar */
+  --ct-well: #BCD2DF;        /* crevasse */
+  --ct-sock: #7FA6BF;        /* glacier */
+  --ct-key: #000000;
+  --ct-key-ink: #F7FBFD;
+  --ct-flash: #FFFFFF;
+  --ct-live: #00916A;        /* deep aurora: lines and vias only, never words */
+  --ct-signal: #0077AA;
+  --ct-arc: #6A3FE0;
+  --ct-fault: #A0400A;
+  --ct-fault-sock: #E0A27A;
+  --ct-series-1: #0077AA;
+  --ct-series-2: #6A3FE0;
+  --ct-aurora: linear-gradient(90deg, #00916A, #0077AA 50%, #6A3FE0);
+  --ct-frost:
+    repeating-linear-gradient(45deg, rgba(20, 60, 90, .22) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(-45deg, rgba(20, 60, 90, .11) 0 1px, transparent 1px 13px);
+  --ct-grit: url(/_blob/eb58ac2f650510c93e6d04520190d2b7) 0 0 / 256px 256px;
+}
+
+/* 2. Fixed tokens: identical in both modes ---------------------------------- */
+
+:root {
+  --ct-cut-s: 6px;    /* checks, thumbs, tags */
+  --ct-cut-m: 10px;   /* keys, fields, toasts */
+  --ct-cut-l: 16px;   /* panels, screens */
+
+  --ct-via: 4px;      /* hairline gaps */
+  --ct-pitch: 8px;    /* gaps inside a control */
+  --ct-pin: 12px;     /* key travel, label to field, icon to text */
+  --ct-pad: 16px;     /* inside panels, the phone gutter */
+  --ct-lane: 24px;    /* between controls */
+  --ct-bus: 32px;     /* between columns */
+  --ct-bank: 48px;    /* between blocks */
+  --ct-die: 96px;     /* between sections */
+
+  --ct-drop: cubic-bezier(.55, 0, 1, .45);    /* throw: accelerate into a hard stop */
+  --ct-spring: cubic-bezier(.2, 1.5, .4, 1);  /* release: past the mark and back */
+  --ct-current: cubic-bezier(.65, 0, .35, 1); /* pulse, charge, orbit */
+  --ct-arrive: cubic-bezier(.16, 1, .3, 1);   /* cut, spark, toast */
+  --ct-spark: 80ms;
+  --ct-snap: 110ms;
+  --ct-run: 220ms;
+  --ct-surge: 480ms;
+
+  --ct-display: 'Anybody', 'Arial Black', system-ui, sans-serif;
+  --ct-mono: 'Martian Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+/* 3. Surface and type ------------------------------------------------------- */
+
+/* Put .ct on <body> (or any root). It paints the ground, the grit and the ink. */
+.ct {
+  background: var(--ct-grit), var(--ct-ground);
+  color: var(--ct-ink);
+  font: 400 14px/1.6 var(--ct-mono);
+  -webkit-font-smoothing: antialiased;
+}
+.ct.ct--no-grit { background: var(--ct-ground); }
+.ct *, .ct *::before, .ct *::after { box-sizing: border-box; }
+.ct ::selection { background: var(--ct-signal); color: var(--ct-panel); }
+:where(.ct) :where(h1, h2, h3, h4, p, ul, ol, figure, fieldset, pre, table, dl, dd) { margin: 0; }
+:where(.ct) a { color: var(--ct-signal); text-underline-offset: 3px; }
+:where(.ct) a:hover { color: var(--ct-ink); }
+:where(.ct) :focus-visible { outline: 2px solid var(--ct-signal); outline-offset: 3px; }
+
+/* Type scale: 144 / 72 / 48 / 36 / 24 / 16 / 14 / 12. Display face is always wide. */
+.ct-title   { font: 900 clamp(44px, 9.4vw, 144px)/.86 var(--ct-display); font-stretch: 150%; letter-spacing: -.02em; }
+.ct-display { font: 900 clamp(44px, 6vw, 72px)/.9 var(--ct-display); font-stretch: 150%; letter-spacing: -.02em; text-wrap: balance; }
+.ct-section { font: 850 clamp(32px, 4.4vw, 48px)/.95 var(--ct-display); font-stretch: 145%; letter-spacing: -.015em; text-wrap: balance; }
+.ct-readout { font: 900 36px/1 var(--ct-display); font-stretch: 150%; font-variant-numeric: tabular-nums; }
+.ct-panel-title { font: 800 24px/1.1 var(--ct-display); font-stretch: 125%; }
+.ct-ui      { font: 800 16px/1.2 var(--ct-display); font-stretch: 125%; }
+.ct-label   { font: 700 14px/1.2 var(--ct-display); font-stretch: 112%; }
+.ct-body    { font: 400 14px/1.6 var(--ct-mono); max-width: 65ch; text-wrap: pretty; }
+.ct-cap     { font: 400 12px/1.6 var(--ct-mono); color: var(--ct-ink-2); max-width: 65ch; text-wrap: pretty; }
+.ct-num     { font-variant-numeric: tabular-nums; }
+
+/* Page container and sections */
+.ct-wrap {
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-left: max(40px, env(safe-area-inset-left, 0px));
+  padding-right: max(40px, env(safe-area-inset-right, 0px));
+}
+@media (max-width: 760px) {
+  .ct-wrap {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+}
+.ct-sec { padding-block: var(--ct-die) 0; }
+.ct-sec__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.ct-sec__note { font-size: 12px; color: var(--ct-ink-2); }
+
+/* Block heading: a via, then the words */
+.ct-h { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; font: 800 24px/1.1 var(--ct-display); font-stretch: 125%; }
+.ct-h::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ct-ink); }
+
+.ct-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* 4. Vias, frames, rulers ---------------------------------------------------- */
+
+/* The via is the only circle in the system: line ends, radios, status dots. */
+.ct-v { display: inline-block; flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ct-line); background: var(--ct-panel); }
+.ct-v--ink { border-color: var(--ct-ink); }
+.ct-v--live { border-color: var(--ct-live); background: var(--ct-live); }
+.ct-v--signal { border-color: var(--ct-signal); background: var(--ct-signal); }
+.ct-v--arc { border-color: var(--ct-arc); background: var(--ct-arc); }
+.ct-v--fault { border-color: var(--ct-fault); background: var(--ct-fault); }
+
+/* Frame: a chamfered outline in two layers. Top-left and bottom-right are cut.
+   Set --ct-edge for the outline colour and --ct-fill for the inside. */
+.ct-frame {
+  --c: var(--ct-cut-m);
+  position: relative;
+  isolation: isolate;
+  background: var(--ct-edge, var(--ct-line));
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+.ct-frame::before {
+  --i: calc(var(--c) - .6px);
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--ct-fill, var(--ct-panel));
+  clip-path: polygon(var(--i) 0, 100% 0, 100% calc(100% - var(--i)), calc(100% - var(--i)) 100%, 0 100%, 0 var(--i));
+}
+.ct-frame--s { --c: var(--ct-cut-s); }
+.ct-frame--l { --c: var(--ct-cut-l); }
+/* Layered ice: a fainter inner hairline 4px in. Panels, toasts, code, screens. */
+.ct-frame--ice::after {
+  --k: calc(var(--c) - 2.34px);
+  --k2: calc(var(--k) + .41px);
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  background: color-mix(in srgb, var(--ct-edge, var(--ct-ink-2)) 50%, transparent);
+  clip-path: polygon(evenodd, var(--k) 0, 100% 0, 100% calc(100% - var(--k)), calc(100% - var(--k)) 100%, 0 100%, 0 var(--k), var(--k) 0, var(--k2) 1px, 1px var(--k2), 1px calc(100% - 1px), calc(100% - var(--k2)) calc(100% - 1px), calc(100% - 1px) calc(100% - var(--k2)), calc(100% - 1px) 1px, var(--k2) 1px);
+}
+.ct-frame--well { --ct-fill: var(--ct-frost), var(--ct-well); }
+.ct-frame--ground { --ct-fill: var(--ct-grit), var(--ct-ground); }
+.ct-panel { padding: 24px; }
+
+/* Ruler: a trace with pin ticks every 24px, ending in a via */
+.ct-ruler { position: relative; height: 10px; margin: 16px 0 40px; border-top: 1px solid var(--ct-line); background: repeating-linear-gradient(90deg, var(--ct-line) 0 1px, transparent 1px 24px) 0 0 / calc(100% - 12px) 6px no-repeat; }
+.ct-ruler::after { content: ""; position: absolute; right: 0; top: -5px; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ct-ink); background: var(--ct-ground); }
+/* Bus: the one heavy line per screen, under the title */
+.ct-ruler--bus { border-top: 4px solid var(--ct-ink); }
+.ct-ruler--bus::after { top: -7px; width: 12px; height: 12px; border-width: 2px; }
+.ct-aurora-line { position: relative; height: 2px; background: var(--ct-aurora); }
+
+/* 5. Keys -------------------------------------------------------------------
+   Markup: <button class="ct-btn" type="button"><span class="ct-btn__face">Charge</span></button>
+   Also on <a href>. One light touch throws the whole press (cold-trace.js adds .is-thrown).
+   Kinds: default prime, .ct-btn--ground, .ct-btn--cut, .ct-btn--lever, .ct-btn--sm. */
+
+.ct-btn {
+  --c: var(--ct-cut-m);
+  --ct-travel: 12px;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 3px calc(var(--ct-travel) + 3px);
+  border: 0;
+  background: none;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+/* The socket: hard depth, frosted, never a shadow. 3px wider than the face. */
+.ct-btn::before {
+  content: "";
+  position: absolute;
+  inset: var(--ct-travel) 0 0;
+  z-index: -1;
+  background-color: var(--ct-sock);
+  background-image: var(--ct-frost);
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+}
+/* The face. Its background is the 2px edge; --ct-angle is how far the charge has run. */
+.ct-btn__face {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 28px;
+  color: var(--ct-face-ink, var(--ct-key-ink));
+  font: 800 16px/1 var(--ct-display);
+  font-stretch: 125%;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  background: conic-gradient(from 300deg, var(--ct-hot, var(--ct-signal)) 0deg calc(var(--ct-angle) - 24deg), var(--ct-hot2, var(--ct-live)) calc(var(--ct-angle) - 4deg), var(--ct-edge, var(--ct-key)) var(--ct-angle));
+  clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c));
+  transition: transform var(--ct-run) var(--ct-spring), --ct-angle 180ms var(--ct-current);
+}
+.ct-btn__face::before {
+  --i: calc(var(--c) - 1.2px);
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: var(--ct-face, var(--ct-key));
+  clip-path: polygon(var(--i) 0, 100% 0, 100% calc(100% - var(--i)), calc(100% - var(--i)) 100%, 0 100%, 0 var(--i));
+}
+.ct-btn__face .ct-icon { width: 20px; height: 20px; }
+/* Hover and focus: one lap charges the edge, then it stays lit */
+.ct-btn:hover .ct-btn__face,
+.ct-btn:focus-visible .ct-btn__face {
+  --ct-angle: 384deg;
+  transition: transform var(--ct-run) var(--ct-spring), --ct-angle 420ms var(--ct-current);
+}
+.ct-btn:focus-visible { outline: 2px solid var(--ct-signal); outline-offset: 4px; }
+/* Busy: the current keeps lapping. Use aria-busy="true" or .is-busy. */
+.ct-btn.is-busy .ct-btn__face,
+.ct-btn[aria-busy="true"] .ct-btn__face {
+  background: conic-gradient(from var(--ct-angle), var(--ct-edge, var(--ct-key)) 0deg 200deg, var(--ct-hot2, var(--ct-live)) 260deg, var(--ct-hot, var(--ct-signal)) 320deg, var(--ct-edge, var(--ct-key)) 350deg);
+  animation: ct-pulse 700ms var(--ct-current) infinite;
+}
+/* Throw: drop the full travel in 110ms, hold, spring back. Socket sparks on landing. */
+.ct-btn.is-thrown .ct-btn__face { animation: ct-throw 400ms; }
+.ct-btn.is-thrown::before { animation: ct-spark 280ms var(--ct-arrive) 100ms; }
+.ct-btn.is-busy.is-thrown .ct-btn__face,
+.ct-btn[aria-busy="true"].is-thrown .ct-btn__face { animation: ct-pulse 700ms var(--ct-current) infinite, ct-throw 400ms; }
+.ct-btn.is-down .ct-btn__face { transform: translateY(var(--ct-travel)); }
+/* Dead: sunk, frosted, no current */
+.ct-btn:disabled, .ct-btn[aria-disabled="true"] { cursor: not-allowed; }
+.ct-btn:disabled::before, .ct-btn[aria-disabled="true"]::before { animation: none; }
+.ct-btn:disabled .ct-btn__face,
+.ct-btn[aria-disabled="true"] .ct-btn__face { transform: translateY(var(--ct-travel)); background: var(--ct-line); color: var(--ct-ink-2); animation: none; }
+.ct-btn:disabled .ct-btn__face::before,
+.ct-btn[aria-disabled="true"] .ct-btn__face::before { background: var(--ct-frost), var(--ct-panel); }
+/* Kinds */
+.ct-btn--ground { --ct-face: var(--ct-panel); --ct-face-ink: var(--ct-ink); --ct-edge: var(--ct-ink); }
+.ct-btn--cut { --ct-edge: var(--ct-fault); --ct-face: var(--ct-panel); --ct-face-ink: var(--ct-fault); --ct-sock: var(--ct-fault-sock); --ct-hot: var(--ct-ink); --ct-hot2: var(--ct-ink); }
+.ct-btn--lever { --c: var(--ct-cut-l); --ct-travel: 20px; }
+.ct-btn--lever .ct-btn__face { min-height: 68px; padding: 0 44px; font-size: 24px; font-stretch: 140%; }
+.ct-btn--sm { --c: var(--ct-cut-s); --ct-travel: 8px; }
+.ct-btn--sm .ct-btn__face { min-height: 40px; padding: 0 18px; font-size: 14px; }
+.ct-btn--icon .ct-btn__face { width: 48px; padding: 0; }
+.ct-btn--sm.ct-btn--icon .ct-btn__face { width: 40px; }
+.ct-btns { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px 24px; }
+
+/* 6. Breaker, toggle, check, radio, segmented choice -------------------------- */
+
+/* Breaker: the heavy lever. <button class="ct-breaker" role="switch" aria-checked="false"> */
+.ct-breaker { position: relative; flex: none; width: 88px; height: 208px; margin: 0; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ct-breaker:focus-visible { outline: 2px solid var(--ct-signal); outline-offset: 4px; }
+.ct-breaker__slot { position: absolute; left: 34px; top: 6px; bottom: 6px; width: 20px; isolation: isolate; background: var(--ct-line); clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+.ct-breaker__slot::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--ct-frost), var(--ct-well); clip-path: polygon(5.4px 0, 100% 0, 100% calc(100% - 5.4px), calc(100% - 5.4px) 100%, 0 100%, 0 5.4px); }
+.ct-breaker__fill { position: absolute; left: 9px; top: 12px; bottom: 12px; width: 2px; background: var(--ct-rule); }
+.ct-breaker__fill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--ct-arc), var(--ct-signal) 50%, var(--ct-live)); transform: scaleY(0); transform-origin: 50% 0; transition: transform var(--ct-run) var(--ct-current); }
+.ct-breaker__handle { position: absolute; left: 0; top: 0; width: 88px; height: 58px; transition: transform 240ms var(--ct-current); }
+.ct-breaker__handle::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; bottom: 0; background: var(--ct-frost), var(--ct-sock); clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
+.ct-breaker__grip { position: absolute; left: 0; right: 0; top: 0; height: 48px; background: repeating-linear-gradient(90deg, transparent 0 6px, color-mix(in srgb, var(--ct-key-ink) 60%, transparent) 6px 7px) 50% 50% / 56px 18px no-repeat, var(--ct-key); clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); transition: transform var(--ct-run) var(--ct-spring); }
+.ct-breaker:active .ct-breaker__grip { transform: translateY(6px); transition: transform var(--ct-snap) var(--ct-drop); }
+.ct-breaker[aria-checked="true"] .ct-breaker__handle { transform: translateY(150px); transition: transform 160ms var(--ct-drop); }
+.ct-breaker[aria-checked="true"] .ct-breaker__fill::after { transform: scaleY(1); transition: transform var(--ct-surge) var(--ct-current) 140ms; }
+.ct-breaker[aria-checked="true"] .ct-breaker__slot { animation: ct-spark-signal 320ms var(--ct-arrive) 150ms; }
+
+/* Toggle: <button class="ct-toggle" role="switch" aria-checked="false" aria-labelledby="…"> */
+.ct-switch-row { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+.ct-toggle { position: relative; flex: none; width: 72px; height: 44px; margin: 0; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ct-toggle:focus-visible { outline: 2px solid var(--ct-signal); outline-offset: 2px; }
+.ct-toggle__body { position: absolute; left: 4px; right: 4px; top: 6px; bottom: 6px; isolation: isolate; background: var(--ct-line); clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); transition: background-color var(--ct-run) var(--ct-current); }
+.ct-toggle__body::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--ct-frost), var(--ct-well); clip-path: polygon(5.4px 0, 100% 0, 100% calc(100% - 5.4px), calc(100% - 5.4px) 100%, 0 100%, 0 5.4px); }
+.ct-toggle__trace { position: absolute; left: 10px; right: 10px; top: 50%; height: 2px; margin-top: -1px; background: var(--ct-rule); }
+.ct-toggle__trace::after { content: ""; position: absolute; inset: 0; background: var(--ct-aurora); transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--ct-run) var(--ct-current); }
+.ct-toggle__thumb { position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; background: var(--ct-ink-2); clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); transition: transform var(--ct-snap) var(--ct-drop), background-color var(--ct-snap) var(--ct-current); }
+.ct-toggle:hover .ct-toggle__body { background: var(--ct-signal); }
+.ct-toggle[aria-checked="true"] .ct-toggle__body { background: var(--ct-ink); }
+.ct-toggle[aria-checked="true"] .ct-toggle__thumb { transform: translateX(36px); background: var(--ct-ink); }
+.ct-toggle[aria-checked="true"] .ct-toggle__trace::after { transform: scaleX(1); }
+
+/* Check and radio: <label class="ct-check"><input class="ct-sr" type="checkbox"><span class="ct-check__box"></span>Words</label> */
+.ct-check { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.ct-check__box { position: relative; flex: none; width: 22px; height: 22px; isolation: isolate; background: var(--ct-line); clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); transition: background-color var(--ct-snap) var(--ct-current); }
+.ct-check__box::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--ct-panel); clip-path: polygon(4.4px 0, 100% 0, 100% calc(100% - 4.4px), calc(100% - 4.4px) 100%, 0 100%, 0 4.4px); transition: background-color var(--ct-snap) var(--ct-current); }
+.ct-check__box::after { content: ""; position: absolute; left: 5px; top: 5px; width: 11px; height: 6px; border-left: 2px solid var(--ct-panel); border-bottom: 2px solid var(--ct-panel); transform: rotate(-45deg) scale(0); transition: transform var(--ct-run) var(--ct-spring); }
+.ct-radio__via { position: relative; flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ct-line); background: var(--ct-panel); transition: border-color var(--ct-snap) var(--ct-current); }
+.ct-radio__via::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ct-signal); transform: scale(0); transition: transform var(--ct-run) var(--ct-spring); }
+.ct-check:hover .ct-check__box { background: var(--ct-signal); }
+.ct-check:hover .ct-radio__via { border-color: var(--ct-signal); }
+.ct-sr:checked + .ct-check__box, .ct-sr:checked + .ct-check__box::before { background: var(--ct-ink); }
+.ct-sr:checked + .ct-check__box::after { transform: rotate(-45deg) scale(1); }
+.ct-sr:checked + .ct-radio__via { border-color: var(--ct-ink); }
+.ct-sr:checked + .ct-radio__via::after { transform: scale(1); }
+.ct-check:has(.ct-sr:focus-visible) { outline: 2px solid var(--ct-signal); outline-offset: 2px; }
+.ct-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.ct-fieldset > legend { padding: 0; margin-bottom: 8px; font: 700 14px/1.2 var(--ct-display); font-stretch: 112%; color: var(--ct-ink-2); }
+
+/* Segmented choice: a row of radios drawn as small keys.
+   <fieldset class="ct-seg"><legend>Travel</legend>
+     <label><input class="ct-sr" type="radio" name="t" checked><span>12px</span></label> … */
+.ct-seg { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ct-seg > legend { width: 100%; padding: 0; margin-bottom: 8px; font: 700 14px/1.2 var(--ct-display); font-stretch: 112%; color: var(--ct-ink-2); }
+.ct-seg label { position: relative; cursor: pointer; }
+.ct-seg label > span:last-child {
+  position: relative; isolation: isolate; display: grid; place-items: center; min-width: 56px; min-height: 44px; padding: 0 16px;
+  font: 800 14px/1 var(--ct-display); font-stretch: 125%; color: var(--ct-ink);
+  background: var(--ct-line);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  transition: background-color var(--ct-snap) var(--ct-current), color var(--ct-snap) var(--ct-current);
+}
+.ct-seg label > span:last-child::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--ct-panel); clip-path: polygon(5.4px 0, 100% 0, 100% calc(100% - 5.4px), calc(100% - 5.4px) 100%, 0 100%, 0 5.4px); transition: background-color var(--ct-snap) var(--ct-current); }
+.ct-seg label:hover > span:last-child { background: var(--ct-signal); }
+.ct-seg .ct-sr:checked + span { background: var(--ct-key); color: var(--ct-key-ink); }
+.ct-seg .ct-sr:checked + span::before { background: var(--ct-key); }
+.ct-seg label:has(.ct-sr:focus-visible) { outline: 2px solid var(--ct-signal); outline-offset: 2px; }
+
+/* 7. Field, slider, scroll bar ------------------------------------------------ */
+
+/* <div class="ct-field"><label class="ct-field__label" for="x">Name</label>
+     <span class="ct-input"><input id="x"><span class="ct-input__unit">m</span></span>
+     <p class="ct-field__msg" id="x-msg">Hint</p></div>
+   Fault: add .is-fault to .ct-input and .ct-field__msg, and aria-invalid="true". */
+.ct-fields { display: flex; flex-direction: column; gap: 24px; }
+.ct-field { display: flex; flex-direction: column; gap: 12px; }
+.ct-field__label { font: 700 14px/1.2 var(--ct-display); font-stretch: 112%; }
+.ct-input { --c: 8px; position: relative; isolation: isolate; display: flex; align-items: center; min-height: 48px; background: var(--ct-line); clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c)); }
+.ct-input::before { --i: calc(var(--c) - .6px); content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--ct-panel); clip-path: polygon(var(--i) 0, 100% 0, 100% calc(100% - var(--i)), calc(100% - var(--i)) 100%, 0 100%, 0 var(--i)); }
+.ct-input input, .ct-input select, .ct-input textarea { flex: 1; min-width: 0; min-height: 46px; margin: 0; padding: 0 14px; border: 0; outline: 0; background: transparent; color: var(--ct-ink); font: 400 14px/1.4 var(--ct-mono); caret-color: var(--ct-signal); }
+.ct-input textarea { padding-block: 12px; resize: vertical; }
+.ct-input select { appearance: none; cursor: pointer; }
+.ct-input input::placeholder, .ct-input textarea::placeholder { color: var(--ct-ink-2); }
+.ct-input__unit { padding-right: 14px; color: var(--ct-ink-2); font-size: 12px; }
+.ct-input .ct-icon { margin-left: 14px; width: 18px; height: 18px; color: var(--ct-ink-2); }
+.ct-input:hover { background: var(--ct-ink-2); }
+.ct-input:focus-within { background: var(--ct-aurora); }
+.ct-input.is-fault { background: var(--ct-fault); }
+.ct-input.is-fault::after { content: ""; position: absolute; left: 64%; bottom: 0; width: 14px; height: 2px; background: var(--ct-ground); animation: ct-gap var(--ct-run) var(--ct-arrive); }
+.ct-field__msg { min-height: 1.6em; font-size: 12px; color: var(--ct-ink-2); }
+.ct-field__msg.is-fault { color: var(--ct-fault); }
+
+/* Slider: <div class="ct-range"><span class="ct-range__well"></span><span class="ct-range__trace"></span>
+     <span class="ct-range__fill" style="width: calc((100% - 20px) * .62 + 10px)"></span>
+     <span class="ct-range__ticks"><i></i>×11</span><input type="range"></div> */
+.ct-range { position: relative; height: 48px; }
+.ct-range__well { position: absolute; left: 0; right: 0; top: 50%; height: 16px; margin-top: -8px; background: var(--ct-frost), var(--ct-well); clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+.ct-range__trace { position: absolute; left: 10px; right: 10px; top: 50%; height: 1px; background: var(--ct-line); }
+.ct-range__fill { position: absolute; left: 0; top: 50%; height: 2px; margin-top: -1px; background: var(--ct-aurora); }
+.ct-range__ticks { position: absolute; left: 6px; right: 6px; top: 50%; margin-top: -4px; display: flex; justify-content: space-between; pointer-events: none; }
+.ct-range__ticks i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ct-line); background: var(--ct-panel); }
+.ct-range input { position: absolute; inset: 0; width: 100%; height: 48px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.ct-range input:focus { outline: 0; }
+.ct-range input::-webkit-slider-runnable-track { height: 48px; border: 0; background: transparent; }
+.ct-range input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 32px; margin-top: 8px; border: 0; background: var(--ct-ink); clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); transition: transform var(--ct-run) var(--ct-spring), background-color var(--ct-run) var(--ct-current); }
+.ct-range input:hover::-webkit-slider-thumb { background: var(--ct-signal); }
+.ct-range input:active::-webkit-slider-thumb { transform: translateY(4px); transition: transform var(--ct-snap) var(--ct-drop); }
+.ct-range input::-moz-range-track { height: 48px; border: 0; background: transparent; }
+.ct-range input::-moz-range-thumb { width: 20px; height: 32px; border: 0; border-radius: 0; background: var(--ct-ink); clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+.ct-range input:hover::-moz-range-thumb { background: var(--ct-signal); }
+.ct-range:has(input:focus-visible) { outline: 2px solid var(--ct-signal); outline-offset: 4px; }
+
+/* Scroll bar: add .ct-bar to any scrolling box */
+.ct-bar::-webkit-scrollbar { width: 14px; height: 14px; }
+.ct-bar::-webkit-scrollbar-track { background: linear-gradient(var(--ct-line), var(--ct-line)) 50% 0 / 1px 100% no-repeat; }
+.ct-bar::-webkit-scrollbar-track:horizontal { background: linear-gradient(var(--ct-line), var(--ct-line)) 0 50% / 100% 1px no-repeat; }
+.ct-bar::-webkit-scrollbar-thumb { border: 3px solid transparent; background: linear-gradient(135deg, transparent 4px, var(--ct-ink) 4px) 0 0 / 100% 51% no-repeat padding-box, linear-gradient(-45deg, transparent 4px, var(--ct-ink) 4px) 0 100% / 100% 51% no-repeat padding-box; }
+.ct-bar::-webkit-scrollbar-thumb:hover { background: linear-gradient(135deg, transparent 4px, var(--ct-signal) 4px) 0 0 / 100% 51% no-repeat padding-box, linear-gradient(-45deg, transparent 4px, var(--ct-signal) 4px) 0 100% / 100% 51% no-repeat padding-box; }
+.ct-bar::-webkit-scrollbar-corner { background: transparent; }
+@supports not selector(::-webkit-scrollbar) {
+  .ct-bar { scrollbar-width: thin; scrollbar-color: var(--ct-ink) var(--ct-well); }
+}
+
+/* 8. Toast, tag, table, readout ------------------------------------------------ */
+
+/* <div class="ct-frame ct-frame--ice ct-toast ct-toast--live" role="status"><i class="ct-v ct-v--live"></i>
+     <div class="ct-toast__text"><p class="ct-toast__t">Charged</p><p class="ct-toast__b">…</p></div></div> */
+.ct-toast { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px; }
+.ct-toast > .ct-v { margin-top: 4px; }
+.ct-toast__text { flex: 1; min-width: 0; }
+.ct-toast__t { font: 800 16px/1.2 var(--ct-display); font-stretch: 125%; }
+.ct-toast__b { margin-top: 4px; font-size: 12px; line-height: 1.55; color: var(--ct-ink-2); }
+.ct-toast--live { --ct-edge: var(--ct-live); }
+.ct-toast--arc { --ct-edge: var(--ct-arc); }
+.ct-toast--fault { --ct-edge: var(--ct-fault); }
+.ct-toast--fault .ct-toast__t { color: var(--ct-fault); }
+.ct-toast.is-new { animation: ct-drop-in var(--ct-run) var(--ct-arrive); }
+/* The cut line inside a fault toast: two halves part in copper */
+.ct-cutline { display: flex; height: 2px; margin-top: 14px; }
+.ct-cutline i { flex: 1; background: var(--ct-fault); }
+.ct-cutline i:first-child { margin-right: 6px; animation: ct-split-l var(--ct-run) var(--ct-arrive); }
+.ct-cutline i:last-child { margin-left: 6px; animation: ct-split-r var(--ct-run) var(--ct-arrive); }
+
+/* Tag: a small status chip. Words stay ink; the via carries the state. */
+.ct-tag { --c: var(--ct-cut-s); position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 8px; min-height: 26px; padding: 0 10px; font: 700 12px/1 var(--ct-display); font-stretch: 112%; white-space: nowrap; color: var(--ct-ink); background: var(--ct-edge, var(--ct-line)); clip-path: polygon(var(--c) 0, 100% 0, 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, 0 100%, 0 var(--c)); }
+.ct-tag::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--ct-panel); clip-path: polygon(5.4px 0, 100% 0, 100% calc(100% - 5.4px), calc(100% - 5.4px) 100%, 0 100%, 0 5.4px); }
+.ct-tag .ct-v { width: 7px; height: 7px; }
+.ct-tag--live { --ct-edge: var(--ct-live); }
+.ct-tag--signal { --ct-edge: var(--ct-signal); }
+.ct-tag--arc { --ct-edge: var(--ct-arc); }
+.ct-tag--fault { --ct-edge: var(--ct-fault); }
+
+/* Table: rules in --ct-rule, numbers tabular, headers in second ink */
+.ct-table-box { overflow-x: auto; }
+.ct-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ct-table th, .ct-table td { padding: 12px 16px 12px 0; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--ct-rule); }
+.ct-table thead th { font: 700 13px/1.2 var(--ct-display); font-stretch: 112%; color: var(--ct-ink-2); border-bottom-color: var(--ct-line); }
+.ct-table tbody th { font: 800 14px/1.2 var(--ct-display); font-stretch: 125%; }
+.ct-table td.ct-num, .ct-table th.ct-num { text-align: right; font-variant-numeric: tabular-nums; }
+.ct-table tbody tr { transition: background-color var(--ct-snap) var(--ct-current); }
+.ct-table tbody tr:hover { background: color-mix(in srgb, var(--ct-signal) 8%, transparent); }
+
+/* Readout tile: one number that matters, a via, a label */
+.ct-stat { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 20px; }
+.ct-stat__k { display: flex; align-items: center; gap: 8px; font: 700 13px/1.2 var(--ct-display); font-stretch: 112%; color: var(--ct-ink-2); }
+.ct-stat__v { font: 900 36px/1 var(--ct-display); font-stretch: 150%; font-variant-numeric: tabular-nums; }
+.ct-stat__n { font-size: 12px; color: var(--ct-ink-2); }
+
+/* 9. Loaders, curtain ---------------------------------------------------------- */
+
+/* SVG loaders draw with these classes; give the moving path pathLength="100". */
+.ct-svg-base { fill: none; stroke: var(--ct-line); stroke-width: 1.5; }
+.ct-svg-via { fill: var(--ct-panel); stroke: var(--ct-ink); stroke-width: 1.5; }
+.ct-svg-loop { fill: none; stroke: var(--ct-signal); stroke-width: 2.5; stroke-dasharray: 18 82; animation: ct-loop 1.2s var(--ct-current) infinite; }
+.ct-svg-fill { fill: none; stroke: var(--ct-live); stroke-width: 2.5; transition: stroke-dasharray var(--ct-run) var(--ct-current); }
+.ct-svg-sweep { fill: none; stroke: var(--ct-signal); stroke-width: 2.5; stroke-dasharray: 20 180; animation: ct-sweep 1.6s var(--ct-current) infinite; }
+.ct-svg-spin { fill: none; stroke: var(--ct-signal); stroke-width: 2.5; stroke-dasharray: 22 78; transform-box: fill-box; transform-origin: 50% 50%; animation: ct-orbit 900ms var(--ct-current) infinite; }
+
+/* Curtain: aurora in hairlines. Heroes and loading screens only.
+   <div class="ct-curtain" data-ct-curtain></div> — cold-trace.js draws the lines. */
+.ct-curtain { position: absolute; inset: 0; pointer-events: none; transform-origin: 50% 75%; animation: ct-curtain 9s ease-in-out infinite alternate; }
+.ct-curtain__l { position: absolute; width: 2px; margin-left: -1px; background: linear-gradient(to bottom, transparent, var(--ct-arc) 18%, var(--ct-signal) 52%, var(--ct-live) 84%, transparent); transform-origin: 50% 100%; animation: ct-shimmer 3.2s var(--ct-current) infinite alternate; }
+.ct-curtain__l:nth-child(3n) { width: 1px; }
+[data-theme="light"] .ct-curtain { opacity: .85; }
+.ct--still .ct-curtain, .ct--still .ct-curtain * { animation-play-state: paused; }
+
+/* 10. Icons, navigation ---------------------------------------------------------- */
+
+/* <svg class="ct-icon" aria-hidden="true"><use href="icons.svg#ct-i-home"/></svg>
+   Lit state (hover, focus, on) fills the via: set --ct-via. */
+.ct-icon { display: inline-block; flex: none; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: miter; stroke-linecap: butt; overflow: visible; vertical-align: middle; }
+:hover > .ct-icon, :focus-visible > .ct-icon, .ct-icon.is-on { --ct-via: currentColor; }
+.ct-icon.is-on { color: var(--ct-live); }
+.ct-icon.is-fault { color: var(--ct-fault); }
+
+/* Top navigation: words in second ink, the current page in ink with a lit via */
+.ct-nav { display: flex; flex-wrap: wrap; gap: 0 24px; }
+.ct-nav a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ct-ink-2); text-decoration: none; font: 700 14px/1 var(--ct-display); font-stretch: 112%; transition: color var(--ct-run) var(--ct-current); }
+.ct-nav a:hover, .ct-nav a[aria-current="page"] { color: var(--ct-ink); }
+
+/* Side navigation for app screens */
+.ct-sidenav { display: flex; flex-direction: column; gap: 2px; }
+.ct-sidenav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; color: var(--ct-ink-2); text-decoration: none; font: 700 14px/1 var(--ct-display); font-stretch: 112%; border-left: 2px solid transparent; transition: color var(--ct-run) var(--ct-current), border-color var(--ct-run) var(--ct-current); }
+.ct-sidenav a:hover { color: var(--ct-ink); }
+.ct-sidenav a[aria-current="page"] { color: var(--ct-ink); border-left-color: var(--ct-signal); --ct-via: var(--ct-signal); }
+.ct-sidenav a[aria-current="page"] .ct-icon { color: var(--ct-signal); }
+
+/* Brand mark: a via and the wide name */
+.ct-mark { display: inline-flex; align-items: center; gap: 12px; color: var(--ct-ink); text-decoration: none; font: 800 16px/1 var(--ct-display); font-stretch: 140%; }
+.ct-mark::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ct-ink); }
+
+/* 11. Keyframes, reduced motion ----------------------------------------------- */
+
+@keyframes ct-pulse { to { --ct-angle: 360deg; } }
+@keyframes ct-throw {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  27.5%, 45% { transform: translateY(var(--ct-travel)); animation-timing-function: cubic-bezier(.2, 1.5, .4, 1); }
+  100% { transform: translateY(0); }
+}
+@keyframes ct-loop { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes ct-sweep { from { stroke-dashoffset: 20; } to { stroke-dashoffset: -100; } }
+@keyframes ct-orbit { to { transform: rotate(360deg); } }
+@keyframes ct-gap { from { transform: scaleX(0); } }
+@keyframes ct-split-l { from { transform: translateX(6px); background-color: var(--ct-ink); } }
+@keyframes ct-split-r { from { transform: translateX(-6px); background-color: var(--ct-ink); } }
+@keyframes ct-spark { from { background-color: var(--ct-flash); } }
+@keyframes ct-spark-signal { from { background-color: var(--ct-signal); } }
+@keyframes ct-drop-in { from { transform: translateY(-12px); opacity: 0; } }
+@keyframes ct-curtain { from { transform: skewX(-5deg) translateX(-1.5%); } to { transform: skewX(4deg) translateX(1.5%); } }
+@keyframes ct-shimmer { from { transform: scaleY(.82); } to { transform: scaleY(1.06); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ct *, .ct *::before, .ct *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

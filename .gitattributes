@@ -1,0 +1,5 @@
+# keep LF in scripts so shebangs work on every OS (CRLF breaks `#!/usr/bin/env python3`)
+*.py text eol=lf
+house/bin/* text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf

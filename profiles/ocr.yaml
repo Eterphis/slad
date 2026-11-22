@@ -1,0 +1,8 @@
+# Default. Text layer, plus RapidOCR (ONNX, CPU) on pages without a usable text layer.
+# Slot for a local-model reader (T016): copy this file to llm.yaml and set
+#   reader: {kind: llm, model: models/<file>.gguf}
+# No code change is needed once T016 registers the "llm" reader kind.
+description: text layer + RapidOCR on pages without text (default)
+ocr:
+  enabled: true
+reader: null

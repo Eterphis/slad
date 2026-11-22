@@ -1,0 +1,54 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# node
+node_modules/
+
+# editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# claude local settings
+.claude/settings.local.json
+
+# house: generated per machine by `house adapt` (absolute paths of that machine), never committed
+AGENTS.md
+CLAUDE.md
+.claude/agents/
+.claude/skills/
+.house/tools.json
+.house/generated.json
+.house/tmp/
+.worktrees/
+
+# backups `house adapt` makes of hand-edited generated files
+*.orig
+*.orig-*
+
+# UZP challenge data clone (downloaded separately, never committed)
+uzp-data/
+
+# acceptance-check scratch dirs
+.acc/
+
+# runtime I/O folders (keep the folders, ignore contents)
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+uzp-data-noisy/
+
+# local LLM weights (T016), never committed
+models/

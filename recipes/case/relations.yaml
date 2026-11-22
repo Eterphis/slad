@@ -1,0 +1,69 @@
+# Case-level consistency relations (see odw2json/case/step.py for the field reference).
+# Data-consistency checks only (D-007): no fee or deadline rules.
+low_confidence: 0.6      # evidence confidence below this makes an identifier repairable
+max_substitutions: 2     # at most this many confusable characters may differ in a repair
+confusable: ["0O", "1lI", "5S", "8B", "08", "56", "38"]   # OCR-confusable character groups
+
+relations:
+  - name: "pelnomocnictwo.mocodawca.nip in odwolanie.Odwolujacy.nip"
+    a: {class: pelnomocnictwo, path: "mocodawca[*].data.nip"}
+    b: {class: odwolanie, path: "Odwolujacy[*].nip"}
+    compare: digits
+    validator: nip
+    repair: false   # off (D-021): documents may be inconsistent and gold transcribes each document as written
+  - name: "pelnomocnictwo.mocodawca.krs in odwolanie.Odwolujacy.krs"
+    a: {class: pelnomocnictwo, path: "mocodawca[*].data.krs"}
+    b: {class: odwolanie, path: "Odwolujacy[*].krs"}
+    compare: digits
+    validator: krs
+    repair: false   # off (D-021): documents may be inconsistent and gold transcribes each document as written
+  - name: "pelnomocnictwo.mocodawca.nazwa in odwolanie.Odwolujacy.nazwa"
+    a: {class: pelnomocnictwo, path: "mocodawca[*].data.nazwa"}
+    b: {class: odwolanie, path: "Odwolujacy[*].nazwa"}
+    compare: text
+  - name: "odwolanie.pelnomocnik in pelnomocnictwo.pelnomocnicy"
+    a: {class: odwolanie, path: "Odwolujacy[*].pelnomocnik.imie_nazwisko"}
+    b: {class: pelnomocnictwo, path: "pelnomocnicy[*].imie_nazwisko"}
+    compare: text
+  - name: "odwolanie.numer_postepowania in przelew.tytul"
+    a: {class: odwolanie, path: "ZamowieniePubliczne.numer_postepowania"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  - name: "pelnomocnictwo.pelnomocnicy in przelew.tytul"
+    a: {class: pelnomocnictwo, path: "pelnomocnicy[*].imie_nazwisko"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  # Titles differ by payment kind (stamp duty names attorney and principal; an entry fee names the parties, the
+  # subject and the appeal date), so these are soft: a miss means "not mentioned", never a failure.
+  - name: "pelnomocnictwo.mocodawca.nazwa in przelew.tytul"
+    a: {class: pelnomocnictwo, path: "mocodawca[*].data.nazwa"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  - name: "odwolanie.Odwolujacy.nazwa in przelew.tytul"
+    a: {class: odwolanie, path: "Odwolujacy[*].nazwa"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  - name: "odwolanie.Zamawiajacy.nazwa in przelew.tytul"
+    a: {class: odwolanie, path: "Zamawiajacy[*].nazwa"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  - name: "odwolanie.ZamowieniePubliczne.tytul in przelew.tytul"
+    a: {class: odwolanie, path: "ZamowieniePubliczne.tytul"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  - name: "odwolanie.OdwolanieKIO.data in przelew.tytul"
+    a: {class: odwolanie, path: "OdwolanieKIO.data"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true
+  - name: "odwolanie.pelnomocnik in przelew.tytul"
+    a: {class: odwolanie, path: "Odwolujacy[*].pelnomocnik.imie_nazwisko"}
+    b: {class: przelew, path: "przelew_bankowy.tytul"}
+    compare: contains
+    soft: true

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ślad · odwołania KIO do JSON · Eterphis</title>
+<link rel="icon" type="image/svg+xml" href="/static/coldtrace/eterphis-favicon.svg">
+<script>
+/* Before paint: night is the default, the saved choice wins. */
+(function () {
+  var m = "dark";
+  try { m = localStorage.getItem("ct-theme") || "dark"; } catch (e) {}
+  if (m === "system") m = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", m === "light" ? "light" : "dark");
+})();
+</script>
+<link rel="stylesheet" href="/static/coldtrace/fonts.css">
+<link rel="stylesheet" href="/static/coldtrace/bundle.css">
+<link rel="stylesheet" href="/static/coldtrace/eterphis-mark.css">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="ct">
+<a class="skip" href="#main">Przejdź do treści</a>
+
+<header class="topbar ct-wrap">
+  <a class="eph-lockup eph-lockup--h" href="/" aria-label="Eterphis, strona główna">
+    <!--ETERPHIS_MARK-->
+    <!--ETERPHIS_WORDMARK-->
+  </a>
+  <nav class="ct-nav topbar__nav" aria-label="Widoki">
+    <a href="#przetwarzanie" id="nav-process" aria-current="page">Przetwarzanie</a>
+    <a href="#klasy" id="nav-classes">Klasy dokumentów</a>
+  </nav>
+  <div class="ct-switch-row">
+    <button class="ct-toggle" type="button" role="switch" aria-checked="false" aria-labelledby="mode-label" id="mode-switch" data-ct-switch>
+      <span class="ct-toggle__body"><span class="ct-toggle__trace"></span><span class="ct-toggle__thumb"></span></span>
+    </button>
+    <span id="mode-label" class="ct-label">Daylight</span>
+  </div>
+</header>
+
+<main id="main" class="ct-wrap">
+<div id="view-process">
+  <section class="hero">
+    <h1 class="ct-display">Sprawa na wejściu, JSON na wyjściu</h1>
+    <div class="ct-ruler ct-ruler--bus" aria-hidden="true"></div>
+    <p class="ct-body">Wgraj dokumenty jednej sprawy. Dla każdego pliku zobaczysz rozpoznany rodzaj pisma, wynik w formacie JSON i dowód dla każdego pola.</p>
+  </section>
+
+  <section class="ct-sec" aria-labelledby="s-upload">
+    <div class="ct-sec__head">
+      <h2 class="ct-section" id="s-upload">Wgraj sprawę</h2>
+      <p class="ct-sec__note">Odwołanie, pełnomocnictwo, potwierdzenie przelewu i inne załączniki</p>
+    </div>
+    <div class="ct-ruler" aria-hidden="true"></div>
+
+    <div class="intake">
+      <label class="ct-frame ct-frame--well drop" id="drop" for="file">
+        <input class="ct-sr" id="file" type="file" accept="application/pdf,.pdf" multiple>
+        <svg class="ct-icon drop__icon" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path d="M12,16 V4 M7,9 L12,4 L17,9 M4,15 V20 H20 V15"/><circle cx="12" cy="16" r="2" style="fill: var(--ct-via, var(--ct-well))"/></svg>
+        <span class="ct-panel-title">Przeciągnij tu pliki PDF</span>
+        <span class="ct-cap">albo dotknij, aby wybrać z dysku</span>
+      </label>
+
+      <div class="intake__side">
+        <div class="ct-field">
+          <label class="ct-field__label" for="case">Nazwa sprawy</label>
+          <span class="ct-input"><input id="case" type="text" value="sprawa" maxlength="60" autocomplete="off" aria-describedby="case-msg"></span>
+          <p class="ct-field__msg" id="case-msg">Trafia do nazwy archiwum ZIP.</p>
+        </div>
+        <ul id="queue" class="queue" aria-label="Pliki w kolejce" aria-live="polite"></ul>
+        <div class="ct-btns">
+          <button id="clear" class="ct-btn ct-btn--ground" type="button" hidden><span class="ct-btn__face">Wyczyść</span></button>
+          <button id="go" class="ct-btn" type="button" disabled><span class="ct-btn__face">Przetwórz sprawę</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="progress" class="ct-frame ct-frame--ice progress" hidden role="status" aria-live="polite">
+      <svg viewBox="0 0 320 44" class="progress__trace" aria-hidden="true">
+        <path class="ct-svg-base" d="M6,32 H96 L116,12 H204 L224,32 H314"/>
+        <path class="ct-svg-sweep" pathLength="100" d="M6,32 H96 L116,12 H204 L224,32 H314"/>
+        <circle class="ct-svg-via" cx="6" cy="32" r="4"/><circle class="ct-svg-via" cx="314" cy="32" r="4"/>
+      </svg>
+      <div>
+        <p class="ct-ui" id="progress-title">Przetwarzanie</p>
+        <p class="ct-cap" id="progress-text">Czytam dokumenty. Skan może potrwać około 7 s na stronę (rozpoznawanie tekstu OCR).</p>
+      </div>
+    </div>
+
+    <div id="notice" class="notice" aria-live="polite"></div>
+  </section>
+
+  <section class="ct-sec" id="results" aria-labelledby="s-results" hidden>
+    <div class="ct-sec__head">
+      <h2 class="ct-section" id="s-results">Wynik</h2>
+      <p class="ct-sec__note" id="case-title"></p>
+    </div>
+    <div class="ct-ruler" aria-hidden="true"></div>
+
+    <div class="results-bar">
+      <div class="ct-btns">
+        <button id="zip" class="ct-btn ct-btn--ground" type="button"><span class="ct-btn__face"><svg class="ct-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12,4 V16 M7,11 L12,16 L17,11 M4,15 V20 H20 V15"/></svg>Pobierz wszystko (ZIP)</span></button>
+      </div>
+      <p id="summary" class="ct-body summary"></p>
+    </div>
+
+    <div id="checks"></div>
+    <div id="docs" class="docs"></div>
+  </section>
+</div>
+
+<div id="view-classes" hidden>
+  <section class="hero">
+    <h1 class="ct-display">Klasy dokumentów</h1>
+    <div class="ct-ruler ct-ruler--bus" aria-hidden="true"></div>
+    <p class="ct-body">Nowy rodzaj pisma to jeden plik receptury. Dodaj go tutaj, sprawdź na własnym PDF-ie i zapisz. Następny dokument zostanie rozpoznany bez restartu.</p>
+  </section>
+
+  <section class="ct-sec" aria-labelledby="s-classes">
+    <div class="ct-sec__head">
+      <h2 class="ct-section" id="s-classes">Klasy</h2>
+      <p class="ct-sec__note" id="classes-note"></p>
+    </div>
+    <div class="ct-ruler" aria-hidden="true"></div>
+    <div id="class-list" class="class-list" aria-live="polite"></div>
+    <div class="ct-btns class-new">
+      <button id="new-class" class="ct-btn ct-btn--ground" type="button"><span class="ct-btn__face">Nowa klasa z szablonu</span></button>
+    </div>
+  </section>
+
+  <section class="ct-sec" id="editor-sec" aria-labelledby="s-editor" hidden>
+    <div class="ct-sec__head">
+      <h2 class="ct-section" id="s-editor">Edytor</h2>
+      <p class="ct-sec__note" id="editor-note"></p>
+    </div>
+    <div class="ct-ruler" aria-hidden="true"></div>
+
+    <div id="cnotice" class="notice" aria-live="polite"></div>
+    <div id="errlist" class="errlist" role="region" aria-label="Błędy receptury" hidden></div>
+
+    <div class="editor-grid">
+      <div class="ct-field">
+        <label class="ct-field__label" for="recipe-text">Receptura (YAML)</label>
+        <div class="ct-frame ct-frame--well code">
+          <pre class="code__gutter" id="recipe-gutter" aria-hidden="true"></pre>
+          <textarea id="recipe-text" class="code__text" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-describedby="recipe-msg"></textarea>
+        </div>
+        <p class="ct-field__msg" id="recipe-msg">Wzorce to wyrażenia regularne, dopasowywane do tekstu małymi literami bez polskich znaków.</p>
+      </div>
+      <div class="ct-field">
+        <label class="ct-field__label" for="schema-text">Szkielet wyniku (JSON)<span id="schema-file" class="ct-cap"></span></label>
+        <div class="ct-frame ct-frame--well code code--schema">
+          <textarea id="schema-text" class="code__text" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" aria-describedby="schema-msg"></textarea>
+        </div>
+        <p class="ct-field__msg" id="schema-msg">Pełny zestaw pól wyniku. Brakujące w dokumencie dostaną wartość null.</p>
+        <div class="ct-btns"><button id="make-skeleton" class="ct-btn ct-btn--sm ct-btn--ground" type="button"><span class="ct-btn__face">Szkielet z pól</span></button></div>
+      </div>
+    </div>
+
+    <div class="ct-btns editor-actions">
+      <button id="btn-delete" class="ct-btn ct-btn--cut" type="button" hidden><span class="ct-btn__face">Usuń</span></button>
+      <button id="btn-validate" class="ct-btn ct-btn--ground" type="button"><span class="ct-btn__face">Sprawdź</span></button>
+      <button id="btn-try" class="ct-btn ct-btn--ground" type="button"><span class="ct-btn__face">Wypróbuj na PDF</span></button>
+      <input class="ct-sr" id="try-file" type="file" accept="application/pdf,.pdf" multiple tabindex="-1" aria-hidden="true">
+      <button id="btn-save" class="ct-btn" type="button"><span class="ct-btn__face">Zapisz</span></button>
+    </div>
+
+    <div id="try-out" class="docs try-out" aria-live="polite"></div>
+  </section>
+</div>
+</main>
+
+<footer class="ct-wrap foot">
+  <div class="ct-ruler" aria-hidden="true"></div>
+  <p class="ct-cap">Pliki są przetwarzane w pamięci tymczasowej serwera i usuwane zaraz po odpowiedzi.</p>
+</footer>
+
+<script src="/static/coldtrace/bundle.js"></script>
+<script src="/static/app.js"></script>
+<script src="/static/classes.js"></script>
+</body>
+</html>

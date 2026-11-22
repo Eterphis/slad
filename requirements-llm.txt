@@ -1,0 +1,3 @@
+# Optional: the local-LLM reader (profile `llm`, docs/LLM.md). CPU wheels of llama.cpp bindings (MIT).
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+llama-cpp-python>=0.3.16

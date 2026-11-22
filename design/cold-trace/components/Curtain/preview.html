@@ -1,0 +1,12 @@
+<!-- @dsCard group="Structure" height=300 subtitle="Hero and loading screens only" -->
+<div class="ct" style="padding: 24px; min-height: 100%">
+<div class="ct-frame ct-frame--l ct-frame--ground" style="position: relative; height: 252px; overflow: hidden" aria-hidden="true">
+  <div class="ct-curtain" id="c1"></div>
+  <div class="ct-curtain" id="c2" style="inset: 75.8% 0 0"></div>
+  <span style="position: absolute; left: 0; right: 0; top: 75.8%; height: 1px; background: var(--ct-ink-2)"></span>
+</div>
+</div>
+<script>
+ColdTrace.curtain(document.getElementById('c1'), { count: 64 });
+ColdTrace.curtain(document.getElementById('c2'), { count: 64, reflect: true });
+</script>

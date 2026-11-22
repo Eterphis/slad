@@ -1,0 +1,144 @@
+# Power of attorney (pełnomocnictwo). Output: schemas/pelnomocnictwo.json.
+# Patterns run on folded text (lower case, no diacritics) unless a strategy says raw: true.
+class: pelnomocnictwo
+description: Pełnomocnictwo do reprezentowania wykonawcy przed KIO
+classify:
+  min_score: 4
+  margin: 1
+  signals:
+    - {pattern: "pelnomocnictw", weight: 3, head: 300, squash: true}
+    - {pattern: "mocodaw", weight: 1}
+    - {pattern: 'ustanawia\w*|udziela\w*|upowaznia\w*|umocowan', weight: 1}  # all persons: "udzielają" (consortia)
+    - {pattern: "pelnomocnik", weight: 1}
+  forbidden:
+    - {pattern: "see the notice on ted website|ogloszenie o zamowieniu lub ogloszenie o koncesji", head: 600}
+
+sections:
+  # the attorneys listed after "... udziela pełnomocnictwa:" (OCR may garble the word: "pehnomocnictwa")
+  - name: lista_pelnomocnikow
+    start: '(?:udziela\w*|ustanawia\w*|upowaznia\w*)\s+(?:pe\w{0,2}nomoc\w*)\s*:'
+    end: '\bdo\s+(?:reprezentowania|dzialania|wykonywania|zastepowania)|\bw sprawie\b|\bw postepowaniu\b'
+    include_start: false
+  # signature block: from the first dotted signature line (with the "W imieniu X:" / "Za X" caption above it)
+  - name: podpisy
+    start: '^(?:[ \t]*(?:w imieniu|za)\b[^\n]*\n(?:[ \t]*\n)?)?[^\n]*(?:\.{6,}|…{3,}|_{6,})'
+
+fields:
+  # One item per principal. Consortium members are enumerated ("...(Konsorcjum): 1) X sp. z o.o., KRS ...;
+  # 2) Y S.A., ...") or named as leader/partner; with fewer than two such starts the whole document is one principal.
+  - path: mocodawca
+    list_of_blocks:
+      start: '(?:^|(?<=[:;])|(?<=[:;] ))[ \t]*(?:\d{1,2}[.)]|[a-e]\)|[-•–])[ \t]*(?=[^;]{0,250}?\b(?:krs|nip|regon|z siedziba)\b)|(?:lider\w*|partner\w*|czlon\w*|uczestnik\w*)\s+konsorcjum|^[ \t]*(?:wykonawca|mocodawca)\s+(?:nr\s*)?(?:\d|[ivx]+)\b'
+      end: '\b(?:ustanawia\w*|udziela\w*|upowaznia\w*)\b'
+      min_blocks: 2
+    fields:
+      - path: data.imie_nazwisko
+        strategies:
+          # a natural person (sole trader) as principal
+          - {use: regex, pattern: '\bja,?\s+(?:nizej podpisan\w*,?\s+)?(?P<v>[a-z-]{2,}\s+[a-z-]{2,}),?\s+(?:prowadzac|zamieszk|legitymuj|pesel|wykonujac|dzialajac we wlasnym)'}
+          - {use: regex, pattern: '(?P<v>\b[a-z-]{2,}\s+[a-z-]{2,}),?\s+prowadzac\w*\s+(?:jednoosobow\w+\s+)?dzialalnosc'}
+        normalize: strip
+
+      - path: data.nazwa
+        strategies:
+          - {use: regex, pattern: '(?:lider\w*|partner\w*|czlon\w*|uczestnik\w*)\s+konsorcjum\w*\s*(?:\([^)]*\))?\s*[:-]?\s*(?P<v>[^\n,(:]+?)\s*(?:,|\(|z siedziba)'}
+          - {use: regex, pattern: 'mocodawc\w*\s+jest\s+(?P<v>[^,\n]+?)\s*,'}
+          - {use: regex, pattern: '(?:w imieniu|do reprezentacji)\s+(?!(?:wykonawc|mocodawc|spolk|zamawiajac|konsorcj)\w*\b)(?P<v>[^(,]+?)\s*(?:\(|,)'}
+          - {use: regex, pattern: 'pod (?:firma|nazwa)\s+["„”]?(?P<v>[^"”,(]+?)\s*(?:["”,(])'}
+          # "Medicor IT Solutions S.A. z siedzibą w Gdańsk ..., reprezentowana przez ..." (scanned letters)
+          - {use: regex, pattern: '^[ \t]*(?:\d{1,2}[.)][ \t]*)?(?P<v>[^\n,(:]{3,}?)\s+z siedzib\w*'}
+          - {use: after_label, labels: ['^mocodawc\w*:?'], below: true,
+             value: '^(?!(?:ustanawiam|udzielam|upowazniam|pelnomocni|niniejszym)\w*\b)(?P<v>[^.\s].*[a-z].*)$'}
+          # an enumerated party: "1) X sp. z o.o., ul. ..., KRS ..."
+          - {use: regex, pattern: '(?<![\w./])(?:\d{1,2}[.)]|[a-e]\))\s+(?P<v>[^,(;]{3,}?)\s*(?:,|\(|\bz siedziba)(?=[^;]{0,250}?\b(?:krs|nip|regon)\b)'}
+          - {use: regex, pattern: '^[ \t]*(?:[-•–][ \t]*)?(?P<v>[^\n,(]{3,}?(?:sp\. z o\.\s?o\.|s\.\s?a\.|sp\.\s?[jkp]\.|spolka [^\n,(]+?))\s*(?:,|\(|z siedziba)'}
+        normalize: company
+
+      - path: data.krs
+        strategies:
+          - {use: regex, pattern: 'krs\D{0,30}?(?P<v>\d{10})'}
+          - {use: regex, pattern: 'krs\W{0,3}(?:nr\W{0,3})?(?P<v>[\do]{10})(?![\do])'}
+        normalize: ocr_digits
+
+      - path: data.nip
+        strategies:
+          - {use: regex, pattern: 'nip\W{0,3}(?:nr\W{0,3})?(?P<v>\d{10}|\d{3}[ -]\d{3}[ -]\d{2}[ -]\d{2}|\d{3}[ -]\d{2}[ -]\d{2}[ -]\d{3})(?![\d-])'}
+        normalize: digits
+        validate: nip
+
+      - path: data.typ
+        strategies:
+          - {use: derived, if_set: data.imie_nazwisko, value: osoba_fizyczna}
+          - {use: derived, if_set: data.krs, value: osoba_prawna}
+          - {use: derived, if_set: data.nazwa, value: osoba_prawna}
+
+      # who signs for this principal: "reprezentowana przez: X – Prezes Zarządu, Y – Prokurent" or an e-signature
+      - path: podpisujacy[].imie_nazwisko
+        strategies:
+          - {use: regex, all: true, raw: true, pattern: '(?:[Pp]rzez:?\s*|,\s*|^)(?P<v>[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?(?: |(?=[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]))[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?)\s*[–-]\s*(?:Prezes|Wiceprezes|Członek|Prokurent|Dyrektor|Wspólnik|Właściciel|Pełnomocnik|Komplementariusz|Partner|Likwidator|Kierownik)'}
+          - {use: regex, all: true, raw: true, pattern: '[Pp]odpisan\w* (?:elektronicznie )?przez:?\s*(?P<v>[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)? [A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?)'}
+        normalize: person  # also splits "HalinaBaran" (OCR lost the space)
+        dedupe: {}
+
+  # Signatories, grouped per principal by "W imieniu X:" / "Za X" captions (merged into the principals in order);
+  # without such groups every signatory belongs to the (first) principal.
+  - path: mocodawca
+    section: podpisy
+    list_of_blocks:
+      start: '^[ \t]*(?:w imieniu|za)\s+(?!mocodawc|wykonawc|spolk)\S'
+      min_blocks: 2
+      merge: true
+    fields:
+      - path: podpisujacy[].imie_nazwisko
+        strategies:
+          - use: segments
+            all: true
+            raw: true
+            value: '(?<![\w.])(?P<v>[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)? [A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?)(?![\w.])'
+            exclude:
+              - 'za\s'
+              - 'w imieniu'
+              - '(?:wice)?prezes|czlon\w* zarzadu|zarzad|dyrektor|prokurent|wspolnik|wlasciciel|kierownik|pelnomocni|mocodaw|likwidator|komplementariusz|przewodnicz|sekretarz|skarbnik'
+              - 'adw\.|adwokat|r\.\s?pr\.|radc'
+              - 'miejsce|podpis|pieczec|data\b|oplata|dowod|zalacznik'
+            not_after: ['adw\.?', 'r\.\s?pr\.?', 'radca prawny', 'adwokat', 'mec\.?']
+        normalize: person
+        dedupe: {}  # "Zawadżki" in the body, "Zawadzki" at the signature
+
+  - path: pelnomocnicy[].imie_nazwisko
+    strategies:
+      - {use: regex, all: true, pattern: '(?:r\.\s?pr\.|adw\.|radca prawny|adwokat(?![a-z]))\s+(?P<v>[a-z]+\s+[a-z-]+)'}
+    normalize: person
+    dedupe: {}  # the letterhead prints the same attorney in capitals
+
+  # "... udziela pełnomocnictwa: 1. Jan Kowal – adwokat ... 2. ..." or "X (adwokat, ...) oraz Y (radca prawny, ...)";
+  # runs after the title-based rule above and replaces its list when this list is found
+  - path: pelnomocnicy[].imie_nazwisko
+    section: lista_pelnomocnikow
+    strategies:
+      - {use: regex, all: true, raw: true, pattern: '(?<![\w.])(?P<v>[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:-[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)?|[A-ZĄĆĘŁŃÓŚŹŻ]{2,}(?:-[A-ZĄĆĘŁŃÓŚŹŻ]{2,})?\s+[A-ZĄĆĘŁŃÓŚŹŻ]{2,}(?:-[A-ZĄĆĘŁŃÓŚŹŻ]{2,})?)(?![\w])'}
+    normalize: person
+    dedupe: {}
+
+  # The PESEL printed beside each attorney: "(radca prawny, nr wpisu PO-4973, PESEL: 6910...)", "- adwokat, nr wpisu X,
+  # PESEL: ...", "r. pr. Jan Kowal, PESEL 8507..." (no colon). Searched after the name up to the next attorney.
+  - path: pelnomocnicy[].pesel
+    attach_to: pelnomocnicy[].imie_nazwisko
+    window: 150
+    strategies:
+      - {use: regex, pattern: 'pesel\W{0,3}(?P<v>\d{11})(?!\d)'}
+    normalize: digits
+    validate: pesel
+
+# Optional local-LLM reader (profile `llm`, docs/LLM.md): the PESEL of each attorney is printed beside the name in the
+# attorney list, in a layout the rules do not read. Asked only when the text contains "pesel".
+llm:
+  context: {pages: 1, max_chars: 3500}
+  groups:
+    - path: pelnomocnicy
+      question: "The persons who are granted the power of attorney (pelnomocnicy), not the principal and not the signatories."
+      key: imie_nazwisko
+      when: "pesel"
+      fields:
+        - {path: imie_nazwisko, question: "Full name without professional titles (no adw., radca prawny).", normalize: [strip, person]}
+        - {path: pesel, question: "The PESEL number (11 digits) printed for this person, or null.", normalize: digits, validate: pesel}

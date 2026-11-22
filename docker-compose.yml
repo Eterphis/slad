@@ -1,0 +1,29 @@
+# docker compose up --build          -> web UI on http://localhost:8000
+# docker compose run --rm cli        -> ./input/<case>/*.pdf  ->  ./output/<case>/*.json
+services:
+  web:
+    build: .
+    image: odw2json:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./recipes:/app/recipes             # writable: the class editor saves here; hot reload without rebuilding
+      - ./dictionaries:/app/dictionaries:ro
+    environment:
+      ODW2JSON_PROFILE: ${ODW2JSON_PROFILE:-ocr}     # text | ocr (docs/PROFILES.md)
+    restart: unless-stopped
+
+  cli:
+    image: odw2json:latest
+    build: .
+    command: ["python", "-m", "odw2json", "--input", "/app/input", "--output", "/app/output"]
+    volumes:
+      - ./input:/app/input:ro
+      - ./output:/app/output
+      - ./recipes:/app/recipes:ro
+      - ./dictionaries:/app/dictionaries:ro
+      - ./profiles:/app/profiles:ro
+    environment:
+      ODW2JSON_PROFILE: ${ODW2JSON_PROFILE:-ocr}     # text | ocr (docs/PROFILES.md)
+      ODW2JSON_WORKERS: ${ODW2JSON_WORKERS:-}        # empty = min(4, cpu_count // 2)
+    profiles: ["cli"]                     # not started by `docker compose up`

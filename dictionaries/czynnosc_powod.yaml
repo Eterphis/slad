@@ -1,0 +1,42 @@
+# czynnosc_powod_id -> czynnosc_opis (fixed 1:1 official code list 1-12, labels exactly as in uzp-data/oczekiwane-json/czynnosc_powod_id_dict.md).
+# triggers: phrases describing the contested act (matched diacritics- and case-insensitive, a space matches
+# any whitespace). The trigger occurring FIRST in the searched scope wins, so put negated forms
+# ("nie odrzucil") in their own entry: they start earlier than the plain verb and win the tie.
+entries:
+  - id: 1
+    label: "Decyzja o odrzuceniu oferty"
+    triggers: ["poinformował o odrzuceniu oferty", "odrzucił ofertę", "odrzuceniu oferty", "odrzucenia oferty odwołującego"]
+  - id: 2
+    label: "Ogłoszenie wyboru oferty"
+    triggers: ["ogłosił wybór oferty", "wyboru oferty najkorzystniejszej", "wyborze oferty najkorzystniejszej", "wybrał ofertę", "wyboru jako najkorzystniejszej", "wyborze jako najkorzystniejszej", "uznaniu za najkorzystniejszą"]
+  - id: 3
+    label: "Decyzja o wykluczeniu wykonawcy"
+    triggers: ["poinformował o wykluczeniu", "wykluczył z postępowania", "wykluczeniu odwołującego", "wykluczenia odwołującego"]
+  - id: 4
+    label: "Publikacja specyfikacji warunków zamówienia (SWZ)"
+    triggers: ["opublikował specyfikację warunków zamówienia", "opublikował swz", "publikacji specyfikacji warunków zamówienia", "wobec treści dokumentów zamówienia", "wobec treści specyfikacji warunków zamówienia", "wobec postanowień swz", "wobec treści swz", "treści specyfikacji warunków zamówienia", "treści swz", "ustaleniu treści specyfikacji", "ustaleniu treści swz"]
+  - id: 5
+    label: "Modyfikacja treści SWZ"
+    triggers: ["zmodyfikował treść specyfikacji", "zmodyfikował treść swz", "modyfikacji treści swz", "zmienił treść specyfikacji"]
+  - id: 6
+    label: "Odpowiedzi/wyjaśnienia do SWZ"
+    triggers: ["przekazał wykonawcom odpowiedzi", "odpowiedzi i wyjaśnienia do treści", "udzielił odpowiedzi", "treści wyjaśnień swz", "odpowiedzi na pytania wykonawców"]
+  - id: 7
+    label: "Zaniechanie odrzucenia oferty"
+    triggers: ["nie odrzucił oferty", "zaniechał odrzucenia", "zaniechania odrzucenia", "zaniechaniu odrzucenia"]
+  - id: 8
+    label: "Zaniechanie wykluczenia wykonawcy"
+    triggers: ["nie wykluczył", "zaniechał wykluczenia", "zaniechania wykluczenia", "zaniechaniu wykluczenia"]
+  - id: 9
+    label: "Decyzja o unieważnieniu postępowania"
+    triggers: ["unieważni\\w*ł postępowanie", "unieważnieniu postępowania", "unieważnienia postępowania"]
+  - id: 10
+    label: "Zaniechanie unieważnienia postępowania"
+    triggers: ["zaniechał unieważnienia", "nie unieważnił", "zaniechania unieważnienia", "zaniechaniu unieważnienia"]
+  - id: 11
+    label: "Opis przedmiotu zamówienia (OPZ)"
+    triggers: ["udostępnił opis przedmiotu zamówienia", "opublikował opis przedmiotu zamówienia", "opisaniu przedmiotu zamówienia"]
+  # official code list: uzp-data/oczekiwane-json/czynnosc_powod_id_dict.md
+  - id: 12
+    label: "Projektowane postanowienia umowy"
+    triggers: ["projektowan\\w* postanowie\\w* umowy"]  # "wzór umowy" alone also appears in other charges

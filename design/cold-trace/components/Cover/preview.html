@@ -1,0 +1,35 @@
+<!-- @dsCard height=288 -->
+<div class="cover">
+<style>
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--ct-ground); }
+  .cover svg { position: absolute; inset: 0; }
+  .b-ink { fill: var(--ct-ink); }
+  .b-sock { fill: var(--ct-sock); }
+  .b-line { fill: var(--ct-line); }
+  .t-live { fill: none; stroke: var(--ct-live); stroke-width: 2; }
+  .t-signal { fill: none; stroke: var(--ct-signal); stroke-width: 2; }
+  .t-arc { fill: none; stroke: var(--ct-arc); stroke-width: 2; }
+  .via-live { fill: var(--ct-ground); stroke: var(--ct-live); stroke-width: 2; }
+  .via-signal { fill: var(--ct-ground); stroke: var(--ct-signal); stroke-width: 2; }
+  .via-arc { fill: var(--ct-ground); stroke: var(--ct-arc); stroke-width: 2; }
+  .cover__name { position: absolute; left: 40px; bottom: 56px; margin: 0; max-width: 440px; color: var(--ct-ink); font: 900 88px/.95 'Anybody', 'Arial Black', system-ui, sans-serif; font-stretch: 150%; letter-spacing: -.02em; }
+  .cover__tag { position: absolute; left: 40px; bottom: 28px; margin: 0; max-width: 440px; color: var(--ct-ink-2); font: 400 13px/1.4 'Martian Mono', ui-monospace, monospace; }
+</style>
+<svg viewBox="0 0 960 288" width="960" height="288" aria-hidden="true">
+  <!-- blocks: ink slab 200x192 cut-l (16), socket 144x104 cut-m (10), line 144x96 cut-m (10): surfaces only, never aurora fills
+       arrangement: one tall slab with two satellites stacked to its right, all right of x=480
+       pattern: the literal motif, routed traces at 45/90 degrees ending in vias, chosen because Cold Trace's colour lives only inside lines
+       steps: 24 (lane) and 32 (bus) gaps, 2px live traces, via r 5, cuts 10 and 16 -->
+  <polygon class="b-ink" points="576,32 760,32 760,208 744,224 560,224 560,48"/>
+  <polygon class="b-sock" points="794,32 928,32 928,126 918,136 784,136 784,42"/>
+  <polygon class="b-line" points="794,160 928,160 928,246 918,256 784,256 784,170"/>
+  <path class="t-signal" d="M496,96 H520 L560,56 H896"/>
+  <circle class="via-signal" cx="496" cy="96" r="5"/><circle class="via-signal" cx="901" cy="56" r="5"/>
+  <path class="t-arc" d="M496,160 H696 L736,120 H896"/>
+  <circle class="via-arc" cx="496" cy="160" r="5"/><circle class="via-arc" cx="901" cy="120" r="5"/>
+  <path class="t-live" d="M496,248 H600 L640,208 H896"/>
+  <circle class="via-live" cx="496" cy="248" r="5"/><circle class="via-live" cx="901" cy="208" r="5"/>
+</svg>
+<p class="cover__name">Cold<br>Trace</p>
+<p class="cover__tag">Northern lights, glacier fjords and chip wiring.</p>
+</div>
